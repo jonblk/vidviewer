@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -9,9 +10,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"gopkg.in/yaml.v2"
+
+	"github.com/gorilla/handlers"
 
 	"github.com/gorilla/mux"
 	_ "modernc.org/sqlite"
@@ -24,6 +28,63 @@ type App struct {
 	Router *mux.Router
 }
 
+type Playlist struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Date string `json:"date"`
+}
+
+func getAllPlaylists(w http.ResponseWriter, r *http.Request) {
+	// Query all playlists from the database
+	rows, err := db.Query("SELECT * FROM playlists")
+	if err != nil {
+		http.Error(w, "Failed to fetch playlists", http.StatusInternalServerError)
+		return
+	}
+
+	defer rows.Close()
+
+	// Create a slice to store the playlists
+	playlists := []Playlist{}
+
+	// Iterate over the rows and scan each playlist into a struct
+	for rows.Next() {
+		var playlist Playlist
+		err := rows.Scan(&playlist.ID, &playlist.Name, &playlist.Date)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, "Failed to fetch playlists", http.StatusInternalServerError)
+			return
+		}
+		playlists = append(playlists, playlist)
+	}
+
+	// Check for any errors during iteration
+	if err := rows.Err(); err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Failed to fetch playlists", http.StatusInternalServerError)
+		return
+	}
+
+	// Convert the playlists slice to JSON
+	jsonPlaylists, err := json.Marshal(playlists)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "Failed to fetch playlists", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the Content-Type header to application/json
+	w.Header().Set("Content-Type", "application/json")
+
+	// Write the JSON response
+	w.Write(jsonPlaylists)
+}
+
+type FormData struct {
+	Name string `json:"name"`
+}
+
 func createPlaylist(w http.ResponseWriter, r *http.Request) {
 	// Prepare the SQL statement for inserting a row
 	stmt, err := db.Prepare("INSERT INTO playlists (name, date) VALUES (?, ?)")
@@ -32,15 +93,18 @@ func createPlaylist(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	err = r.ParseForm()
+	var formData FormData
+
+	err = json.NewDecoder(r.Body).Decode(&formData)
 	if err != nil {
-		// Handle error
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		// Handle the error
+		log.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Retrieve the value of the "name" property from the form data
-	name := r.Form.Get("name")
+	name := formData.Name
+	log.Println(name)
 
 	currentTime := time.Now()
 	formattedTime := currentTime.Format("2006-01-02 15:04:05")
@@ -49,6 +113,7 @@ func createPlaylist(w http.ResponseWriter, r *http.Request) {
 	_, err = stmt.Exec(name, formattedTime)
 
 	if err != nil {
+		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -100,8 +165,51 @@ func deletePlaylistFromDB(id string) error {
 	return nil
 }
 
+type PlaylistUpdate struct {
+	Name string `json:"name"`
+}
+
+func updatePlaylist(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the ID parameter from the request URL
+	vars := mux.Vars(r)
+	idParam := vars["id"]
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	// Parse the JSON request body
+	var playlistUpdate PlaylistUpdate
+	err = json.NewDecoder(r.Body).Decode(&playlistUpdate)
+	if err != nil {
+		http.Error(w, "Failed to parse JSON body", http.StatusBadRequest)
+		return
+	}
+
+	// Prepare the SQL update statement
+	stmt, err := db.Prepare("UPDATE playlists SET name = ? WHERE id = ?")
+	if err != nil {
+		http.Error(w, "Failed to prepare update statement", http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	// Execute the update statement with the retrieved values
+	_, err = stmt.Exec(playlistUpdate.Name, id)
+	if err != nil {
+		http.Error(w, "Failed to update playlist", http.StatusInternalServerError)
+		return
+	}
+
+	// Return a success message
+	fmt.Fprintf(w, "Playlist updated successfully")
+}
+
 func initializeRoutes(router *mux.Router) {
 	router.HandleFunc("/playlists", createPlaylist).Methods("POST")
+	router.HandleFunc("/playlists", getAllPlaylists).Methods("GET")
+	router.HandleFunc("/playlists/{id}", updatePlaylist).Methods("PUT")
 	router.HandleFunc("/playlists/{id}", deletePlaylist).Methods("DELETE")
 
 	/*
@@ -222,5 +330,12 @@ func main() {
 
 	fmt.Println(path)
 
-	log.Fatal(http.ListenAndServe(":8000", r))
+	// Enable CORS
+	credentials := handlers.AllowCredentials()
+	methods := handlers.AllowedMethods([]string{"GET", "POST", "DELETE", "PUT"})
+	headers := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
+	origins := handlers.AllowedOrigins([]string{"http://localhost:5173"})
+	corsHandler := handlers.CORS(credentials, methods, headers, origins)(r)
+
+	log.Fatal(http.ListenAndServe(":8000", corsHandler))
 }
