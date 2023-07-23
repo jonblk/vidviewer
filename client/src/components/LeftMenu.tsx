@@ -170,14 +170,14 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
   );
 };
 
-interface LeftSideMenuProps {
+interface LeftMenuProps {
   playlists: Playlist[];
   setPlaylists: React.Dispatch<React.SetStateAction<Playlist[]>>; 
   setSelectedPlaylist: React.Dispatch<React.SetStateAction<number | null>>; 
   selectedPlaylist: number | null// the playlist id
 }
 
-const LeftSideMenu: React.FC<LeftSideMenuProps> = ({playlists, setPlaylists, selectedPlaylist, setSelectedPlaylist}) => {
+const LeftMenu: React.FC<LeftMenuProps> = ({playlists, setPlaylists, selectedPlaylist, setSelectedPlaylist}) => {
   useEffect(() => {
     fetchPlaylists(setPlaylists);
   }, []);
@@ -188,7 +188,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({playlists, setPlaylists, sel
   };
 
   return (
-    <div className="w-64 h-screen overflow-y-auto">
+    <div className="w-60 h-full fixed top-14 overflow-y-auto">
       <div className="flex items-center justify-between">
         <h2 className="text-neutral-400">Playlists</h2>
         <Popup overlayStyle={{background: "black", opacity: 0.3}}trigger={<button
@@ -196,7 +196,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({playlists, setPlaylists, sel
         >
           <IoMdAdd />
         </button>} position="right center">
-          <div className="rounded bg-white !dark:bg-neutral-800 p-4 w-[200px]">
+          <div className="rounded bg-white p-4 w-[200px]">
             <NewPlaylistForm onSuccess={() => {fetchPlaylists(setPlaylists)}}/>
           </div>
         </Popup>
@@ -211,7 +211,7 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({playlists, setPlaylists, sel
           <button 
             className={`hover:cursor-pointer flex items-center justify-center gap-1  ${playlist.id === selectedPlaylist ? "dark:text-white underline" : "dark:text-neutral-200"}`} 
             onClick={()=>setSelectedPlaylist(playlist.id)}>
-              {playlist.name}
+              {playlist.name.substring(0,24)}
           </button>
           <Popup 
             overlayStyle={{ background: "black", opacity: 0.3 }} 
@@ -231,4 +231,4 @@ const LeftSideMenu: React.FC<LeftSideMenuProps> = ({playlists, setPlaylists, sel
   );
 };
 
-export default LeftSideMenu;
+export default LeftMenu;
