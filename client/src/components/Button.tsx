@@ -1,0 +1,34 @@
+import React from "react";
+
+interface ButtonProps {
+  onClick: ((event: React.FormEvent) => void);
+  children: React.ReactNode;
+  type: "button" | "submit" | "reset" | undefined;
+  color: "primary" | "neutral" | "danger"
+}
+
+const Button: React.FC<ButtonProps> = ({ onClick, type, children, color}) => {
+  let c = "bg-blue-500 hover:bg-blue-700 text-white";
+  switch(color) {
+    case("primary"):
+      c = "bg-blue-500 hover:bg-blue-700 text-white";
+      break;
+    case("neutral"):
+      c = "bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-500 dark:hover:bg-neutral-600 dark:text-neutral-200";
+      break;
+    case("danger"):
+      c = "bg-red-500 hover:bg-red-600 text-white";
+      break;
+  }
+  return (
+    <button
+      type={type}
+      className={c + " py-1 px-4 w-full rounded"}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+};
+
+export default Button;

@@ -2,13 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-
 :root {
-  font-size: 18px;
-  font-family:   Avenir, Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  font-family:  Arial, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 13px;
+  height: 20px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+body.dark::-webkit-scrollbar-track {
+  background: #222;
+}
+
+body.dark::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
 }

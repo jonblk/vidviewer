@@ -1,18 +1,23 @@
-
-import React, { useState } from 'react';
-import { FiPlay } from 'react-icons/fi';
-import { IoMdPlayCircle } from 'react-icons/io';
+import React, { useState } from "react";
+import { FiMoreHorizontal, FiPlay } from "react-icons/fi";
+import { Video } from "../App";
+import { formatSeconds } from "../util";
 
 interface GridItemProps {
-  id: number;
-  ytID: string;
+  video: Video;
   title: string;
-  thumbnail: string;
-  duration: number;
-  onClickOpenVideo: React.Dispatch<React.SetStateAction<number | null>>;
+  duration: string;
+  onClickOpenVideo: React.Dispatch<React.SetStateAction<Video | undefined>>;
+  onClickEditVideo: (video: Video) => void
 }
 
-const GridItem: React.FC<GridItemProps> = ({ id, ytID, title, thumbnail, duration, onClickOpenVideo }) => {
+const GridItem: React.FC<GridItemProps> = ({
+  onClickEditVideo,
+  video,
+  title,
+  duration,
+  onClickOpenVideo,
+}) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -22,15 +27,35 @@ const GridItem: React.FC<GridItemProps> = ({ id, ytID, title, thumbnail, duratio
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <img  src={thumbnail} alt={title} className="w-full rounded-lg" />
+        <div className="w-full relative aspect-video bg-black overflow-hidden rounded-lg">
+          <img
+            src={`http://localhost:8000/images/${video.id}`}
+            alt={title}
+            className="w-full rounded-lg object-center object-cover h-full"
+          />
+          <div className="absolute bg-black rounded-br-lg p-0.5 px-2 text-xs font-semibold text-neutral-200 top-0">
+            {formatSeconds(duration)}
+          </div>
+        </div>
         {isHovered && (
-          <div onClick={() => onClickOpenVideo(134234)} className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 rounded-lg hover:cursor-pointer">
-            <FiPlay size={40} color="#fff" />
+          <div
+            onClick={() => onClickOpenVideo(video)}
+            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg hover:cursor-pointer"
+          >
+            <FiPlay size={40} color="#f1f1f1f1" />
+            <div
+              onClick={(e) => {e.stopPropagation(); onClickEditVideo(video)}}
+              className="absolute bg-none hover:cursor-pointer  rounded-tr-lg rounded-bl-lg p-0.5 px-2 text-xs font-semibold text-white text-opacity-50 hover:text-opacity-100 top-0 right-0 z-10 "
+            >
+              <FiMoreHorizontal size={"1.1rem"}/>
+            </div>
           </div>
         )}
       </div>
 
-      <h3 className="mt-2">{title}</h3>
+      <h3 className="mt-2 dark:text-neutral-200 text-sm">
+        {title.length > 45 ? title.slice(0, 45) + " ..." : title}
+      </h3>
     </div>
   );
 };

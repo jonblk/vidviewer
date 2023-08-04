@@ -1,26 +1,18 @@
+import { Video } from "../App";
 import VideoGridItem from "./VideoGridItem";
 
 interface VideoGridProps {
-  selectedPlaylistID: number | null;
-  onClickOpenVideo: React.Dispatch<React.SetStateAction<number | null>> 
+  videos: Video[];
+  onClickOpenVideo: React.Dispatch<React.SetStateAction<Video | undefined>>;
+  onClickEditVideo: (video: Video) => void
 }
 
-const VideoGrid: React.FC<VideoGridProps> = ({ selectedPlaylistID, onClickOpenVideo }) => {
-  // Fetch the videos
-  // const temporaryVideos = fetch(selectedPlaylistID);
-    const temporaryVideos = [{
-        id: 303003003,
-        ytID: "234234",
-        title: "Title",
-        thumbnail: "4324234",
-        duration: 4303,
-    }]
-
+const VideoGrid: React.FC<VideoGridProps> = ({ videos, onClickOpenVideo, onClickEditVideo }) => {
   return (
-    <div className="flex flex-wrap">
-      {temporaryVideos.map((videoItem) => (
-        <div key={videoItem.id} className="w-full md:w-1/3 xl:w-1/4 pl-4 mb-6">
-          <VideoGridItem {...{...videoItem, onClickOpenVideo}} />
+    <div className="flex flex-wrap pr-10 pt-2">
+      {videos.map((video) => (
+        <div key={video.id} className="w-full md:w-1/3 xl:w-1/4 pl-4 mb-6">
+          <VideoGridItem {...{...video, video: video, onClickEditVideo, onClickOpenVideo}} />
         </div>
       ))}
     </div>
