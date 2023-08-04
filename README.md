@@ -1,6 +1,6 @@
 # vidviewer (work in progress!)
  
-A minimal web app for downloading, organizing, and viewing yt-dlp videos.  The server is run from a Go executable which also serves frontend assets. 
+A minimal, locally run web app for downloading, organizing, and viewing yt-dlp videos.  The server is run from a Go executable which also serves frontend assets. 
 
 ![vidviewer2](https://github.com/jonblk/vidviewer/assets/132053602/6e885be6-a820-4c28-a7b2-6fcbcf447bec)
 
@@ -8,7 +8,7 @@ A minimal web app for downloading, organizing, and viewing yt-dlp videos.  The s
 
 - Dark/light mode
 - Custom playlists
-- Auto file management (just choose a root folder)
+- Auto file management (just choose a root folder in your system)
 
 ## Stack: 
 
