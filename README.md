@@ -57,4 +57,4 @@ HTML files and assets are served from port 8000 when running the production  ser
 - add option for additional development data folder
 - add settings menu (update data folder path, videos per page)
 - add error messages if ffmpeg, and yt-dlp not found on system
-- add websocket and update client when video processing complete
+- <s>add websocket and update client when video processing complete </s>
