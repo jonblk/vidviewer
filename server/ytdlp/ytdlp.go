@@ -50,7 +50,7 @@ func ExtractVideoInfo(url string) (string, string, error) {
 	return duration, title, nil
 }
 
-func DownloadVideo(url string, filepath string, callback func()) {
+func DownloadVideo(url string, filepath string, callback func(v bool)) {
 	// Set the desired video quality in the format string
 	format := "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
 
@@ -73,16 +73,13 @@ func DownloadVideo(url string, filepath string, callback func()) {
 	if err != nil {
 		// Set the interrupted flag if the command was interrupted
 		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == -1 {
-			log.Println("Download finished successfully")
 			interrupted = true
 		} else {
-			log.Fatalf("Download execution failed: %v", err)
+			interrupted = true
 		}
 	}
-	// Call the callback function once the download is finished and not interrupted
-	if !interrupted {
-		log.Println("Calling callback to clean up video files")
-		callback()
-	}
+
+	log.Println("Video download complete")
+	callback(interrupted)
 }
 

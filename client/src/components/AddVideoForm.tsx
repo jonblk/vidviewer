@@ -4,6 +4,8 @@ import Label from "./Label";
 import Input from "./Input";
 import Button from "./Button";
 import Dropdown, { Option } from "./Dropdown";
+import { BsArrowRepeat } from 'react-icons/bs'; // Spinner icon
+
 
 interface AddVideoFormProps {
   playlists: Playlist[];
@@ -13,6 +15,8 @@ interface AddVideoFormProps {
 const AddVideoForm: React.FC<AddVideoFormProps> = ({ playlists, onSuccess }) => {
   const [url, setUrl] = useState("");
   const [selectedPlaylist, setSelectedPlaylist] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(e.target.value);
@@ -37,10 +41,12 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ playlists, onSuccess }) => 
         body: formData.toString(),
       };
 
+      setIsLoading(true);
+
       fetch("http://localhost:8000/videos", requestOptions)
         .then((response) => {
           if (response.status === 200) {
-            console.log("returned success")
+            setIsLoading(false);
             onSuccess();
           } else {
             console.error(response.statusText);
@@ -48,6 +54,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ playlists, onSuccess }) => 
         })
         .catch((error) => {
           console.error("Error sending the POST request:", error);
+          setIsLoading(false);
         });
         
     }
@@ -66,8 +73,8 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ playlists, onSuccess }) => 
           onSelect={handlePlaylistChange}
         />
       </div>
-      <Button onClick={handleSubmit} color="primary" type="submit">
-        Add Video
+      <Button onClick={handleSubmit} color="primary" disabled={isLoading} type="submit">
+        {isLoading ? <BsArrowRepeat className="spinner" /> : 'Add Video'}
       </Button>
     </form>
   );

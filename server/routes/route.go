@@ -90,7 +90,7 @@ func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
 	Router.HandleFunc("/images/{video_id}", handlers.GetImage).Methods("GET")
 
 	// Create a websocket connection - todo: fix
-	Router.HandleFunc("/downloads", handlers.HandleWebSocket)
+	Router.HandleFunc("/websocket", handlers.HandleWebSocket)
 
 	// PLAYLISTS
 	Router.HandleFunc("/playlists", handlers.CreatePlaylist).Methods("POST")

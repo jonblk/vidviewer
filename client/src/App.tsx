@@ -11,7 +11,8 @@ import EditVideoForm from './components/EditVideoForm';
 import { formatSeconds } from './util';
 import { useDarkMode } from './hooks/useDarkMode';
 //import DownloadStatus from './components/DownloadStatus';
-//import { useWebSocket } from 'react-use-websocket/dist/lib/use-websocket';
+import { useWebSocket } from 'react-use-websocket/dist/lib/use-websocket';
+import { useEvent } from './hooks/useEvent';
 
 export interface Playlist {
   id: number;
@@ -36,12 +37,16 @@ enum ModalState {
   settings,
 }
 
-/*
+
+
+// Received websocket message types:
+const VIDEO_DOWNLOAD_SUCCESS = "video_download_success"
+const VIDEO_DOWNLOAD_FAIL    = "video_download_fail"
+
 type WebSocketMessage = {
-  type: string
+  type: string 
   payload: any
 }
-*/
 
 const App: React.FC = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -59,17 +64,11 @@ const App: React.FC = () => {
   // Current video that is selected to be edited
   const [selectedVideoEdit, setSelectedVideoEdit] = useState<Video>()
 
+  // Set the dark/light visual mode
   const [darkMode, toggleDarkMode] = useDarkMode()
 
-  /*
-  const { lastMessage, readyState } = useWebSocket('ws://localhost:8000/downloads');
-
-  if (readyState === WebSocket.OPEN && lastMessage) {
-    const message: WebsocketMessage = JSON.parse(lastMessage.data) as WebsocketMessage;
-    console.log("New websocket message receieved:")
-    console.log(message.type) 
-  }
-  */
+  // Establish websocket connection
+  const { lastMessage, readyState } = useWebSocket('ws://localhost:8000/websocket');
 
   const fetchPlaylists = async (callback?: () => void) => {
     try {
@@ -98,20 +97,6 @@ const App: React.FC = () => {
     } 
   };
 
-  // FETCH the playlists
-  // On initial render
-  useEffect(() => {
-    fetchPlaylists().catch(e => console.log(e))
-  }, []);
-
-  // FETCH the playlist's videos
-  // When user selects a playlist
-  useEffect(() => {
-    if (selectedPlaylist) {
-      fetchPlaylistVideos(selectedPlaylist.id).catch(e => console.log(e))
-    }
-  }, [selectedPlaylist])
-
   const onClickAddVideo = () => {
     setModalState(ModalState.addVideo)
   }
@@ -133,6 +118,51 @@ const App: React.FC = () => {
   const closeModal = () => {
     setModalState(ModalState.none)
   }
+
+  // FETCH the playlists
+  // On initial render
+  useEffect(() => {
+    fetchPlaylists().catch(e => console.log(e))
+  }, []);
+
+  // FETCH the playlist's videos
+  // When user selects a playlist
+  useEffect(() => {
+    if (selectedPlaylist) {
+      fetchPlaylistVideos(selectedPlaylist.id).catch(e => console.log(e))
+    }
+  }, [selectedPlaylist])
+
+  const onVideoDownloadSuccess = useEvent(() =>{
+    // Update the UI
+    if (selectedPlaylist) {
+      fetchPlaylistVideos(selectedPlaylist.id).catch(e => console.log(e))
+    }
+  })
+
+  console.log(lastMessage)
+
+  useEffect(() => {
+  // Handle lastMessage
+  if (readyState === WebSocket.OPEN && lastMessage) {
+    console.log("Websocket message receieved:")
+    console.log(lastMessage)
+    if (lastMessage.data && typeof lastMessage.data === "string") {
+      const message: WebSocketMessage = JSON.parse(lastMessage.data) as WebSocketMessage;
+
+      if (message.type === VIDEO_DOWNLOAD_FAIL) {
+        console.error("Video download failed") 
+      } 
+      else if (message.type === VIDEO_DOWNLOAD_SUCCESS) {
+        console.log("Video download complete") 
+        onVideoDownloadSuccess()
+      }
+      else {
+        console.log(message.type) 
+      }
+    }
+  }
+},[readyState, lastMessage, onVideoDownloadSuccess])
 
   return (
     <>

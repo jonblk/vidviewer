@@ -18,6 +18,7 @@ import (
 	"vidviewer/db"
 	"vidviewer/files"
 	"vidviewer/models"
+	ws "vidviewer/websocket"
 	"vidviewer/ytdlp"
 
 	"github.com/gorilla/mux"
@@ -28,6 +29,12 @@ import (
 type VideoUpdate struct {
 	Title string `json:"title"`
 }
+
+// note these values have to correspond to client side code
+const (
+	VIDEO_DOWNLOAD_SUCCESS = "video_download_success"
+	VIDEO_DOWNLOAD_FAIL = "video_download_fail"
+)
 
 func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the ID parameter from the request URL
@@ -327,7 +334,13 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	onDownloadSuccess := func() {
+	onDownloadExit := func(isError bool) {
+		if (isError) {
+			log.Println("Error during download! Notifying client.")
+			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: VIDEO_DOWNLOAD_FAIL})
+			return 
+		}
+
 		// Update video in db
 		updateVideoOnDownloadSuccess()
 
@@ -343,17 +356,18 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		// Create folders and move the file to it
 		files.SaveVideoFileAndThumbnail(rootFolderPath, downloadVideoPathWithExt, downloadImgPathWithExt)
 
+		log.Println("Video download related processing complete.  Notifying client of success:")
 		// Write to websocket so client can refresh
-		SendMessageToDownloadStatusBroadcast(WebsocketMessage{Type: "new_video"})
+		ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: VIDEO_DOWNLOAD_SUCCESS})
 	}
 
 	log.Println("begin video download...")
-	
+
 	// Download the video 
 	go ytdlp.DownloadVideo(
 		url, 
 		downloadVideoPathWithExt, 
-		onDownloadSuccess,
+		onDownloadExit,
 	) 
 }	
 

@@ -1,0 +1,19 @@
+# Compiled binary files
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Build output directories
+/bin/
+/pkg/
+
+# Dependency management files
+/vendor/
+/go.sum
+
+# Editor-specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

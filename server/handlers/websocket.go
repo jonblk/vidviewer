@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
+	ws "vidviewer/websocket"
 
 	"github.com/gorilla/websocket"
 )
@@ -24,43 +24,6 @@ var (
 )
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	// Check if the request is coming from port 5173
-	origin := r.Header.Get("Origin")
-	if origin != "" && r.Host == "localhost:5173" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept")
-	}
-
-	// Upgrade the HTTP connection to a WebSocket connection
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		http.Error(w, "Failed to upgrade to WebSocket", http.StatusInternalServerError)
-		return
-	}
-	
-	defer func() {
-		// Add logging statement to track connection closure
-		log.Println("WebSocket connection closed")
-		conn.Close()
-	}()
-
-	for {
-		select {
-		case message := <-downloadStatusBroadcast:
-			err := conn.WriteJSON(message)
-			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
-					log.Println("WebSocket connection closed unexpectedly:", err)
-				} else {
-					log.Println("Error writing message to client:", err)
-				}
-				return
-			}
-		}
-	}
+	hub := ws.NewHub()
+	ws.HandleWebSocket(hub, w, r)
 }
-
-func SendMessageToDownloadStatusBroadcast(message WebsocketMessage) {
-	downloadStatusBroadcast <- message
-}
-
