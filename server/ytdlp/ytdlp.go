@@ -8,6 +8,49 @@ import (
 	"strings"
 )
 
+type Format struct {
+	FormatID string `json:"format_id"`
+	Ext      string `json:"ext"`
+	Resolution      string `json:"resolution"`
+	Filesize string `json:"filesize"`
+}
+
+func GetFormats(url string) ([]Format, error) {
+	cmd := exec.Command("yt-dlp", "--list-formats", url)
+
+	output, err := cmd.Output()
+
+	if err != nil {
+		return nil, err
+	}
+
+	lines := strings.Split(string(output), "\n")
+
+	log.Println(lines)
+
+	formats := []Format{}
+
+	for _, line := range lines {
+		if strings.Contains(line, "|") {
+			fields := strings.Fields(line)
+
+			// currently only return mp4 
+			if fields[1] != "mp4" {
+				continue
+			}
+				
+			format := Format{
+				FormatID:   fields[0],
+				Ext:        fields[1],
+				Resolution: fields[2],
+			}
+			formats = append(formats, format)
+		}
+	}
+
+	return formats, nil
+}
+
 func DownloadVideoThumbnail(videoURL, outputPath string) error {
 	// Run the yt-dlp command to extract the thumbnail
 	cmd := exec.Command("yt-dlp", "--write-thumbnail", "--skip-download", "--convert-thumbnails", "jpg",  "-o", outputPath, videoURL)
@@ -50,9 +93,15 @@ func ExtractVideoInfo(url string) (string, string, error) {
 	return duration, title, nil
 }
 
-func DownloadVideo(url string, filepath string, callback func(v bool)) {
+func DownloadVideo(url string, format string, filepath string, callback func(v bool)) {
 	// Set the desired video quality in the format string
-	format := "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+	if format == "" {
+	  format = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+	}  else {
+	  format = format + "+bestaudio/best"
+	} 
+
+	log.Println("Video format: " + format)
 
     // Define command and arguments
     cmd := exec.Command("yt-dlp", "-f", format, "-o", filepath, url)

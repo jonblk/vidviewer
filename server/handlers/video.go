@@ -172,6 +172,7 @@ func getFileIdAndExt(videoID int) (string, string, error) {
 }
 
 func GetVideo(w http.ResponseWriter, r *http.Request) {
+
 	// Get the video ID from the URL path
 	vars := mux.Vars(r)
 	videoIDStr := vars["id"]
@@ -220,6 +221,31 @@ func GetVideo(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, video.Title, stat.ModTime(), videoFile)
 }
 
+func GetVideoFormats(w http.ResponseWriter, r *http.Request) {
+	// Get the value of the "url" parameter from the URL query string
+	urlParam := r.URL.Query().Get("url")
+
+    // TEMPORARY
+	formats, err := ytdlp.GetFormats(urlParam)
+
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	jsonFormats, err := json.Marshal(formats)
+
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonFormats)
+}
+
 func CreateVideo(w http.ResponseWriter, r *http.Request) {
 	rootFolderPath := config.Load().FolderPath
 	tempFolderpath := files.GetTemporaryFolderPath(rootFolderPath)
@@ -250,6 +276,8 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	format := r.PostFormValue("video_format") 
+
 	// Extract the PlaylistID from the form value
 	playlistID := r.PostFormValue("playlistId")
 	if playlistID == "" {
@@ -268,7 +296,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 
 	fileID, _ := generateFileID()
 
-	downloadVideoPath := filepath.Join(tempFolderpath, fileID) 
+	//downloadVideoPath := filepath.Join(tempFolderpath, fileID) 
 	downloadImgPath   := filepath.Join(tempFolderpath, fileID)
 	downloadVideoPathWithExt := filepath.Join(tempFolderpath, fileID+".mp4") 
 	downloadImgPathWithExt   := filepath.Join(tempFolderpath, fileID+".jpg")
@@ -344,17 +372,24 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		// Update video in db
 		updateVideoOnDownloadSuccess()
 
-        // Save thumbnails as JPG
-		if ytID == "" {
-			// if it's not a youtube video, extract image using ffmpeg
-			extractThumbnail(downloadVideoPath, downloadImgPathWithExt)
-		} else {
-			// get image thumbnail from youtube
-			ytdlp.DownloadVideoThumbnail(url, downloadImgPath)
+		log.Println("youtube id is :" + ytID)
+       
+		// Save thumbnail
+		err = ytdlp.DownloadVideoThumbnail(url, downloadImgPath)
+
+		// If save unsuccessful, use FFMPEG
+		if err != nil {
+			extractThumbnail(downloadVideoPathWithExt, downloadImgPathWithExt)
 		}
 
 		// Create folders and move the file to it
-		files.SaveVideoFileAndThumbnail(rootFolderPath, downloadVideoPathWithExt, downloadImgPathWithExt)
+		thumbnailPath, err := files.SaveVideoFileAndThumbnail(rootFolderPath, downloadVideoPathWithExt, downloadImgPathWithExt)
+
+		if err != nil {
+			log.Println(err.Error())
+		} else {
+			log.Println("thumbnail location: " + thumbnailPath)
+		}
 
 		log.Println("Video download related processing complete.  Notifying client of success:")
 		// Write to websocket so client can refresh
@@ -366,16 +401,20 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 	// Download the video 
 	go ytdlp.DownloadVideo(
 		url, 
+		format,
 		downloadVideoPathWithExt, 
 		onDownloadExit,
 	) 
 }	
 
 func extractThumbnail(videoPath, outputPath string) error {
+	log.Println("Extracting thumbnail with ffmpeg...")
 	// Run the FFmpeg command to extract the thumbnail
 	cmd := exec.Command("ffmpeg", "-i", videoPath, "-ss", "00:00:01", "-vframes", "1", outputPath)
-	err := cmd.Run()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println("FFMPEG Error:", err)
+		fmt.Println("Output:", string(output))
 		return err
 	}
 

@@ -5,4 +5,13 @@ function formatSeconds(seconds: string) {
   return seconds.toString();
 }
 
-export {formatSeconds};
+function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export {formatSeconds, isValidUrl};

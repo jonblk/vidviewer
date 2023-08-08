@@ -104,6 +104,7 @@ func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
 	Router.HandleFunc("/videos/{id}", handlers.GetVideo).Methods("GET")
 	Router.HandleFunc("/videos/{id}", handlers.UpdateVideo).Methods("PUT")
 	Router.HandleFunc("/videos/{id}", handlers.DeleteVideo).Methods("DELETE")
+	Router.HandleFunc("/video_formats", handlers.GetVideoFormats).Methods("GET")
 	
 	return Router
 }

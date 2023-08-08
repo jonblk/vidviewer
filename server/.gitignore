@@ -17,3 +17,8 @@
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+# Ignore specific main file
+/main
+
+!/main.go
