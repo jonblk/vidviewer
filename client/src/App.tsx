@@ -37,15 +37,13 @@ enum ModalState {
   settings,
 }
 
-
-
 // Received websocket message types:
 const VIDEO_DOWNLOAD_SUCCESS = "video_download_success"
 const VIDEO_DOWNLOAD_FAIL    = "video_download_fail"
 
 type WebSocketMessage = {
   type: string 
-  payload: any
+  payload: string | boolean | Video[] | Playlist[]
 }
 
 const App: React.FC = () => {
@@ -73,20 +71,27 @@ const App: React.FC = () => {
   const fetchPlaylists = async (callback?: () => void) => {
     try {
       const response = await fetch("http://localhost:8000/playlists");
-      const data = await response.json();
+      const data = await response.json() as Playlist[];
+
+      console.log(data)
+
       setPlaylists(data);
-      if (callback) {
-        callback()
-      }
+
+      if (callback) callback();
+
     } catch (error) {
       console.error("Error fetching playlists:", error);
     }
   };
 
   const fetchPlaylistVideos = async (id: number | undefined, onSuccess?: (videos: Video[]) => void) => {
+    if (id === undefined) {
+      throw("Error, playlist_id is undefined")
+    }
+
     try {
       const response = await fetch(`http://localhost:8000/playlist_videos/${id}`);
-      const data = await response.json();
+      const data = await response.json() as Video[];
       setVideos(data);
 
       if (onSuccess) {
@@ -140,12 +145,12 @@ const App: React.FC = () => {
     }
   })
 
-  console.log(lastMessage)
 
+  // Setup websocket connection
   useEffect(() => {
   // Handle lastMessage
   if (readyState === WebSocket.OPEN && lastMessage) {
-    console.log("Websocket message receieved:")
+    console.log("Websocket message receieved: ")
     console.log(lastMessage)
     if (lastMessage.data && typeof lastMessage.data === "string") {
       const message: WebSocketMessage = JSON.parse(lastMessage.data) as WebSocketMessage;

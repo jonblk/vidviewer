@@ -53,7 +53,7 @@ const GridItem: React.FC<GridItemProps> = ({
         )}
       </div>
 
-      <h3 className="mt-2 dark:text-neutral-200 text-sm">
+      <h3 data-testid={`video-grid-item-${video.id}`} className="mt-2 dark:text-neutral-200 text-sm">
         {title.length > 45 ? title.slice(0, 45) + " ..." : title}
       </h3>
     </div>

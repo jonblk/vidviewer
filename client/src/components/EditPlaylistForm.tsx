@@ -14,6 +14,9 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
   const [pendingDelete, setPendingDelete] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
+    if (id === undefined || id === null) {
+        throw("Error: playlist id is undefined")
+    }
     event.preventDefault();
     try {
       await fetch(`http://localhost:8000/playlists/${id}`, {
@@ -23,53 +26,57 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
         method: "PUT",
         body: JSON.stringify({ name }),
       })
+      await onSuccess();
     } catch (e) {
       console.log(e);
     }
-
-    onSuccess().catch(e=>console.log(e));
-   // Call setPlaylists with the data variable
   };
 
   const handleDelete = async (event: React.FormEvent) => {
+    if (id === undefined || id === null) {
+        throw("Error: playlist id is undefined")
+    }
     event.preventDefault();
     try {
-      await fetch(`http://localhost:8000/playlists/${id}`, {
+      const f =  await fetch(`http://localhost:8000/playlists/${id}`, {
         method: "DELETE", 
       })
+      console.log(f.ok)
+      await onSuccess();
     } catch (e) {
       console.log(e);
     }
-
-    onSuccess().catch(e=>console.log(e));
   };
 
   return (
     <form className="">
       <div className="mb-4">
-        <Label
-          htmlFor="name"
-        >
-          Edit Playlist
+        <Label htmlFor="playlist-name">
+          Playlist name
         </Label>
         <Input
+          label="Edit the playlist name"
           type="text"
-          id="name"
+          id="playlist-name"
           value={name ? name : ""}
           onChange={(event) => setName(event.target.value)}
         />
       </div>
-      <div className="flex flex-col  gap-3 ">
+      <div className="flex flex-col gap-3 ">
+        {/* Update button */}
         <Button
+          dataTestid="update-playlist"
           color="primary"
           type="submit"
-          onClick={handleSubmit}
+          onClick={(e: React.FormEvent<Element>) => {handleSubmit(e).catch(e=>console.log(e))}}
         >
           Update
         </Button>
 
-        {!pendingDelete && <Button
-          type="submit"
+        {!pendingDelete && 
+        <Button
+          dataTestid="warn-delete-playlist"
+          type="button"
           color="neutral"
           onClick={() => setPendingDelete(true)}
         >
@@ -89,9 +96,10 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
         </Button>
 
         <Button
+          dataTestid="delete-playlist"
           type="submit"
           color="danger"
-          onClick={handleDelete}
+          onClick={(e: React.FormEvent<Element>) => {handleDelete(e).catch(e=>console.log(e))}}
         >
           Delete '{name}'
         </Button>

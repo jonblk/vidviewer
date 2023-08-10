@@ -30,10 +30,10 @@ const NewPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
         <Label htmlFor="name">
           Playlist name
         </Label>
-        <Input type="text" id="name" value={name} onChange={event=>setName(event.target.value)} />
+        <Input label="Playlist name" type="text" id="name" value={name} onChange={event=>setName(event.target.value)} />
       </div>
       <div className="flex items-center gap-4 ">
-        <Button color="primary" type="submit" onClick={handleSubmit}>
+        <Button dataTestid="create-playlist-button" color="primary" type="submit" onClick={handleSubmit}>
           Create
         </Button>
       </div>

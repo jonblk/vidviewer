@@ -1,14 +1,15 @@
 import React from "react";
 
 interface ButtonProps {
-  onClick: ((event: React.FormEvent) => void);
+  onClick: (event: React.FormEvent) => void;
   disabled?: boolean;
   children: React.ReactNode;
+  dataTestid?: string;
   type: "button" | "submit" | "reset" | undefined;
   color: "primary" | "neutral" | "danger"
 }
 
-const Button: React.FC<ButtonProps> = ({ onClick, type, disabled, children, color}) => {
+const Button: React.FC<ButtonProps> = ({ onClick, dataTestid, type, disabled, children, color}) => {
   let c = "bg-blue-500 hover:bg-blue-700 text-white";
   switch(color) {
     case("primary"):
@@ -23,6 +24,7 @@ const Button: React.FC<ButtonProps> = ({ onClick, type, disabled, children, colo
   }
   return (
     <button
+      data-testid={dataTestid}
       type={type}
       className={c + " py-1 px-4 w-full rounded flex items-center justify-center"}
       onClick={onClick}

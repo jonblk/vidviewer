@@ -43,7 +43,7 @@ const Modal: React.FC<ModalProps> = ({ onClose, isOpen, children }) => {
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black dark:bg-opacity-90 bg-opacity-70 z-50">
+        <div data-testid="modal" className="fixed inset-0 flex items-center justify-center bg-black dark:bg-opacity-90 bg-opacity-70 z-50">
           <div className="bg-white dark:bg-neutral-800 dark:text-neutral-300 rounded w-[250px] p-6 shadow-lg relative" ref={modalRef}>
             <button
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 z-60"
