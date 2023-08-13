@@ -27,11 +27,6 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ playlists, onSuccess }) => 
   const [videoFormats, setVideoFormats] = useState<VideoFormat[]>([]);
   const [isFetchingVideoFormats, setIsFetchingVideoFormats] = useState(false)
 
-  const handleFocus = () => {
-    // Clear the input field when it receives focus
-    setUrl("");
-  };
-
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(e.target.value);
   };
@@ -49,7 +44,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ playlists, onSuccess }) => 
 
       // remove duplicate resolutions 
       // NOTE - temporary fix
-      v = v.reduce((accumulator, current) => {
+      v = v.reduce((accumulator: VideoFormat[], current: VideoFormat) => {
         const resolutionExists = accumulator.some(
           (item: VideoFormat) => item.resolution === current.resolution
         );

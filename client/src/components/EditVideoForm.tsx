@@ -52,6 +52,7 @@ const EditVideoForm: React.FC<FormComponentProps> = ({ onSuccess, id, initialTit
           Video title
         </Label>
         <Input
+          label="title"
           type="text"
           id="title"
           value={title ? title : ""}

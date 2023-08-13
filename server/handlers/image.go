@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -43,20 +41,21 @@ func GetImage(w http.ResponseWriter, r *http.Request) {
 	path := files.GetFilePath(rootFolderPath, video.FileID, image_format)
 
 	// Open the video file
-	videoFile, err := os.OpenFile(path, os.O_RDONLY, 0)
+	image, err := os.Open(path)
 
 	if err != nil {
-		http.Error(w, "Failed to open video file", http.StatusInternalServerError)
+		http.Error(w, "Failed to open image file", http.StatusInternalServerError)
 		return
 	}
-	defer videoFile.Close()
 
-	// Set the Content-Type header to image/jpeg
-	w.Header().Set("Content-Type", "image/jpeg")
+	defer image.Close()
 
-	// Copy the video file to the response writer
-	_, err = io.Copy(w, videoFile)
-	if err != nil {
-		log.Fatal(err)
-	}
+	  // Get the file's information
+    fileInfo, err := image.Stat()
+    if err != nil {
+        http.Error(w, "Failed to get file information", http.StatusInternalServerError)
+        return
+    }
+	
+    http.ServeContent(w, r, video.FileID+"."+image_format, fileInfo.ModTime(), image)
 }

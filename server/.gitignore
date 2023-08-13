@@ -20,5 +20,8 @@
 
 # Ignore specific main file
 /main
+/main.exe
+
+/build
 
 !/main.go

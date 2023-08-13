@@ -25,5 +25,6 @@ var (
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	hub := ws.NewHub()
+
 	ws.HandleWebSocket(hub, w, r)
 }

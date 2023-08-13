@@ -133,6 +133,5 @@ func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
 
 	// Set the response headers and write the JSON data to the response
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	w.Write(jsonData)
 }

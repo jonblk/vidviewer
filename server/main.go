@@ -65,8 +65,8 @@ func main() {
 			Addr:         ":8000",
 			Handler:      corsHandler,
 			IdleTimeout:  10 * time.Second,
-			ReadTimeout:  30 * time.Minute,
-			WriteTimeout: 30 * time.Minute,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
 		}
 	} else {
 		srv = &http.Server {
@@ -74,8 +74,8 @@ func main() {
 			Handler:      r,
 			// NOTE what should these values be?
 			IdleTimeout:  10 * time.Second,
-			ReadTimeout:  1 * time.Minute,
-			WriteTimeout: 1 * time.Minute,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
 		}
 	}	
 

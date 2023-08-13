@@ -78,7 +78,7 @@ func HandleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 			// Read messages constantly and remove client if it's closed
 			_, _, err := client.Connection.ReadMessage()
 			if err != nil {
-				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					log.Println("WebSocket connection closed:", err)
 				} else {
 					log.Println("Failed to read WebSocket message:", err)
