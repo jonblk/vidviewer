@@ -15,6 +15,9 @@ type Format struct {
 	Filesize string `json:"filesize"`
 }
 
+// Get the various format ids and their resolutions 
+// Run yt-dlp --list-formats (url) to see the output in your terminal
+// Currently only mp4 extensions are returned
 func GetFormats(url string) ([]Format, error) {
 	cmd := exec.Command("yt-dlp", "--list-formats", url)
 
@@ -26,10 +29,9 @@ func GetFormats(url string) ([]Format, error) {
 
 	lines := strings.Split(string(output), "\n")
 
-	log.Println(lines)
-
 	formats := []Format{}
 
+	// Iterate through each line
 	for _, line := range lines {
 		if strings.Contains(line, "|") {
 			fields := strings.Fields(line)
@@ -96,9 +98,9 @@ func ExtractVideoInfo(url string) (string, string, error) {
 func DownloadVideo(url string, format string, filepath string, callback func(v bool)) {
 	// Set the desired video quality in the format string
 	if format == "" {
-	  format = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+	  format = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
 	}  else {
-	  format = format + "+bestaudio/best"
+	  format = format + "+bestaudio[ext=m4a]/best[ext=mp4]"
 	} 
 
 	log.Println("Video format: " + format)
@@ -122,13 +124,16 @@ func DownloadVideo(url string, format string, filepath string, callback func(v b
 	if err != nil {
 		// Set the interrupted flag if the command was interrupted
 		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == -1 {
+			log.Println("Error processing video:" + err.Error())
 			interrupted = true
 		} else {
+			log.Println("Error processing video:" + err.Error())
 			interrupted = true
 		}
+	} else {
+	    log.Println("Video download complete")
 	}
 
-	log.Println("Video download complete")
 	callback(interrupted)
 }
 
