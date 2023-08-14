@@ -56,6 +56,9 @@ func GetImage(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Failed to get file information", http.StatusInternalServerError)
         return
     }
+
+	// Set the Cache-Control header to enable caching for 1 hour
+    w.Header().Set("Cache-Control", "public, max-age=31536000")
 	
     http.ServeContent(w, r, video.FileID+"."+image_format, fileInfo.ModTime(), image)
 }
