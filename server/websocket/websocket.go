@@ -3,6 +3,7 @@ package websocketutil
 import (
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -13,33 +14,49 @@ type Client struct {
 
 type Hub struct {
 	clients map[*Client]bool
+	mutex   sync.RWMutex
 }
 
 type WebsocketMessage struct {
 	Type string `json:"type"`
 }
 
-var CurrentHub *Hub
+var (
+	CurrentHub *Hub
+	hubMutex   sync.Mutex
+)
 
-func NewHub() *Hub {
+func GetHub() *Hub {
+	hubMutex.Lock()
+	defer hubMutex.Unlock()
+
 	if CurrentHub == nil {
 		CurrentHub = &Hub{
 			clients: make(map[*Client]bool),
 		}
-	} 
-		
+	}
+
 	return CurrentHub
 }
 
 func (hub *Hub) AddClient(client *Client) {
+	hub.mutex.Lock()
+	defer hub.mutex.Unlock()
+
 	hub.clients[client] = true
 }
 
 func (hub *Hub) RemoveClient(client *Client) {
+	hub.mutex.Lock()
+	defer hub.mutex.Unlock()
+
 	delete(hub.clients, client)
 }
 
 func (hub *Hub) WriteToClients(message WebsocketMessage) {
+	hub.mutex.RLock()
+	defer hub.mutex.RUnlock()
+
 	for client := range hub.clients {
 		err := client.Connection.WriteJSON(message)
 		if err != nil {
@@ -48,7 +65,7 @@ func (hub *Hub) WriteToClients(message WebsocketMessage) {
 	}
 }
 
-func HandleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
+func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -56,7 +73,6 @@ func HandleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
-
 	if err != nil {
 		log.Println("Failed to upgrade WebSocket connection:", err)
 		return
@@ -66,6 +82,7 @@ func HandleWebSocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		Connection: conn,
 	}
 
+	hub := GetHub()
 	hub.AddClient(client)
 
 	go func() {

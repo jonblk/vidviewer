@@ -246,6 +246,7 @@ func GetVideoFormats(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonFormats)
 }
 
+//TODO - clean up this function
 func CreateVideo(w http.ResponseWriter, r *http.Request) {
 	rootFolderPath := config.Load().FolderPath
 	tempFolderpath := files.GetTemporaryFolderPath(rootFolderPath)
@@ -393,7 +394,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 
 		log.Println("Video download related processing complete.  Notifying client of success:")
 		// Write to websocket so client can refresh
-		ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: VIDEO_DOWNLOAD_SUCCESS})
+		ws.GetHub().WriteToClients(ws.WebsocketMessage{Type: VIDEO_DOWNLOAD_SUCCESS})
 	}
 
 	log.Println("begin video download...")
@@ -462,7 +463,7 @@ func generateFileID() (string, error) {
 	alphanumeric := "abcdef0123456789"
 
 	for {
-		// Generate a random string of length 8
+		// Generate a random string of length 12 
 		fileID := ""
 		for i := 0; i < 12; i++ {
 			// Generate a random index within the range of alphanumeric characters
