@@ -48,9 +48,9 @@ HTML files and assets are served from port 8000 when running the production  ser
 - add file_format options other than mp4 ? 
 - add testing
 - add pagination
-- add 'All videos' view option
+- <s>add 'All videos' view option</s>
 - improve react performance 
-- add video resolution options  
+- <s>add video resolution options</s>
 - add 'cancel download' button
 - add import local files feature
 - add playlists dropdown in edit video form
