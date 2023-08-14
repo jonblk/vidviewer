@@ -15,6 +15,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var allPlaylist = models.Playlist {ID: 0, Name: "All", Date: "" }
+
 func UpdateRootFolderPath(w http.ResponseWriter, r *http.Request) {
 	log.Println("yo sup dawg")
 }
@@ -30,7 +32,7 @@ func GetAllPlaylists(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	// Create a slice to store the playlists
-	playlists := []models.Playlist{}
+	playlists := []models.Playlist{allPlaylist}
 
 	// Iterate over the rows and scan each playlist into a struct
 	for rows.Next() {

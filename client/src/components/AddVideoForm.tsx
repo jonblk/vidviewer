@@ -131,10 +131,12 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ playlists, onSuccess }) => 
       </div>
       <div>
         <Label htmlFor="playlist">Playlist:</Label>
+
+        {/* remove "ALL" playlist from list */}
         <Dropdown
           disabled={false}
           isFetching={false}
-          options={playlists.map(p=>{return{label:p.name, value: p.id}})}
+          options={playlists.filter(p=>p.id !== 0).map(p=>{return{label:p.name, value: p.id}})}
           onSelect={handlePlaylistChange}
         />
       </div>

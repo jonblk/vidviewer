@@ -12,6 +12,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const ALL_PLAYLIST_ID = 0;
+
 type VideoItem struct {
 	FilePath string `json:"file_path"`
     SongPath string `json:"song_path"`
@@ -71,13 +73,21 @@ func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Query the database to get all columns from the playlist with the join
-	rows, err := db.SQL.Query(`
+	var query string
+
+	if (ALL_PLAYLIST_ID != playlistID) {
+		query = `
 		SELECT v.*
 		FROM videos AS v
 		JOIN playlist_videos AS pv ON v.id = pv.video_id
 		WHERE pv.playlist_id = ?
-	`, playlistID)
+	    `
+	} else {
+		query = "SELECT * FROM videos WHERE download_complete = 0"
+	}
+
+	// Query the database to get all columns from the playlist with the join
+	rows, err := db.SQL.Query(query, playlistID)
 
 	if err != nil {
 		log.Fatal(err)

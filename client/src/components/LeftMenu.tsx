@@ -35,10 +35,14 @@ const LeftMenu: React.FC<LeftMenuProps> = ({playlists, selectedPlaylist, onClick
             onClick={()=>setSelectedPlaylist(playlist)}>
               {playlist.name.substring(0,17)}
           </button>
-          <div data-testid={`edit-playlist-button-${playlist.id}`} onClick={() => onClickOpenEditPlaylistMenu(playlist)} className="flex items-center space-x-2 p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:cursor-pointer rounded-full dark:text-neutral-400 dark:hover:text-white">
+
+          { 
+          // dont show edit button if it's 'All' playlist
+          playlist.id !== 0 && <div data-testid={`edit-playlist-button-${playlist.id}`} onClick={() => onClickOpenEditPlaylistMenu(playlist)} className="flex items-center space-x-2 p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:cursor-pointer rounded-full dark:text-neutral-400 dark:hover:text-white">
             <FiEdit3 className="invisible group-hover:visible" 
           />  
           </div>  
+          }
         </div>
       ))}
     </div>
