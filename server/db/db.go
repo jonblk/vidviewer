@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log"
+	"time"
 
 	migrate "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -10,15 +11,25 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// Access the database using the db.SQL variable,
+// which is an instance of *sql.DB representing the connection pool
 var SQL *sql.DB
-var err error
 
+//Create sqlite connection pool
 func CreateConnection(dbPath string) {
+    var err error
 	SQL, err = sql.Open("sqlite3", dbPath)
 
 	if err != nil {
+		log.Println("Error creating SQLITE connection pool")
 		panic(err)
 	}
+
+		// Set connection pool size
+	SQL.SetMaxOpenConns(10)
+	SQL.SetMaxIdleConns(5)
+	SQL.SetConnMaxIdleTime(5 * time.Minute)
+	
 }
 
 func RunMigrations(dbPath string) {
