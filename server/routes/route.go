@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"time"
 	"vidviewer/handlers"
+	"vidviewer/middleware"
 
 	"github.com/gorilla/mux"
 	_ "modernc.org/sqlite"
@@ -47,7 +48,6 @@ func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
 			return
 		}
 	}
-
 	// Serve js/css files
 	var serveAssets = func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -80,6 +80,12 @@ func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
     }
 
     Router = mux.NewRouter()
+
+	// Middleware 
+	Router.Use(middleware.ConfigMiddleware)
+	Router.Use(middleware.FilesMiddleware)
+	Router.Use(middleware.DBMiddleware)
+
 	// Serve html files from build folder
 	Router.HandleFunc("/", serveHtml).Methods("GET")
 

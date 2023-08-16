@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"strings"
-
 	"gopkg.in/yaml.v2"
 
 	_ "modernc.org/sqlite"
@@ -44,10 +42,8 @@ func update(newConfig Config) {
 }
 
 // Load, or create config.yaml if necessary
-func Load() *Config {
+func Initialize() Config {
 	filePath := getConfigFilePath()
-
-	log.Println(getRootPath())
 
 	// Create root config folder if it doesn't exist
 	if _, err := os.Stat(getRootPath()); err != nil && os.IsNotExist(err) {
@@ -57,52 +53,30 @@ func Load() *Config {
 			log.Println(err)
 		}
 	} else if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("Error trying to get root path info: ", err)
 		panic(err)
 	}
 
 	// Check if the config file exists
 	// and create it if it doesn't
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		var folderPath string
-
-		// Ask user for the files folder path
-		// where they will store their videos
-		fmt.Println("Please input the path to the root folder for file storage.  If you haven't already created such a folder, please create it now.  For example you can call it vidviewer, or video_data.  Now enter the path to this folder...")
-
-		fmt.Scanln(&folderPath)
-		folderPath = strings.TrimSpace(folderPath)
-
-		_, err := os.Stat(folderPath)
-
-		if err != nil {
-			if os.IsNotExist(err) {
-				fmt.Println("Folder path does not exist.")
-				Load()
-			} else {
-				fmt.Println("Error:", err)
-				panic(err)
-			}
-		} else {
-			fmt.Println("Okay, setting up the folder: "+folderPath, folderPath)
-			update(Config{FolderPath: folderPath})
-		}
+		update(Config{FolderPath: ""})
 	}
 
 	// Load
 	data, err := ioutil.ReadFile(filePath)
 
 	if err != nil {
-		log.Println("Error config file does not exist!")
+		log.Println("Error reading config file!")
 		panic(err)
 	}
 
-	config := &Config{}
+	config := Config{}
 
 	err = yaml.Unmarshal(data, &config)
 
 	if err != nil {
-		log.Println("Error converting yaml to config")
+		log.Println("Error converting yaml to Config")
 		panic(err)
 	}
 

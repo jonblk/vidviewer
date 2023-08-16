@@ -6,9 +6,6 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"vidviewer/config"
-	"vidviewer/db"
-	"vidviewer/files"
 	"vidviewer/routes"
 
 	"github.com/gorilla/handlers"
@@ -28,19 +25,6 @@ var (
 var devBuildEnabled bool
 
 func main() {
-	// Load or create config folder and config.yaml
-	c := config.Load()
-
-	// Create data folders if missing
-	files.Initialize(c.FolderPath)
-
-	// Path to database
-	dbPath := files.GetDatabasePath(c.FolderPath)
-
-	// Initialize database
-	db.CreateConnection(dbPath)
-	db.RunMigrations(dbPath)
-
 	// Initialize routes
 	r := routes.Initialize(assets, htmlFiles)
 

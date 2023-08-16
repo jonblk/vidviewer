@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-	"vidviewer/db"
+	"vidviewer/middleware"
 	"vidviewer/models"
 
 	"github.com/gorilla/mux"
@@ -22,8 +22,10 @@ func UpdateRootFolderPath(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetAllPlaylists(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+
 	// Query all playlists from the database
-	rows, err := db.SQL.Query("SELECT * FROM playlists")
+	rows, err := db.Query("SELECT * FROM playlists")
 	if err != nil {
 		http.Error(w, "Failed to fetch playlists", http.StatusInternalServerError)
 		return
@@ -73,6 +75,8 @@ type PlaylistUpdate struct {
 }
 
 func UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+
 	// Retrieve the ID parameter from the request URL
 	vars := mux.Vars(r)
 	idParam := vars["id"]
@@ -91,7 +95,7 @@ func UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Prepare the SQL update statement
-	stmt, err := db.SQL.Prepare("UPDATE playlists SET name = ? WHERE id = ?")
+	stmt, err := db.Prepare("UPDATE playlists SET name = ? WHERE id = ?")
 	if err != nil {
 		http.Error(w, "Failed to prepare update statement", http.StatusInternalServerError)
 		return
@@ -114,8 +118,10 @@ type FormData struct {
 }
 
 func CreatePlaylist(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+
 	// Prepare the SQL statement for inserting a row
-	stmt, err := db.SQL.Prepare("INSERT INTO playlists (name, date) VALUES (?, ?)")
+	stmt, err := db.Prepare("INSERT INTO playlists (name, date) VALUES (?, ?)")
 
 	if err != nil {
 		log.Println(err)
@@ -132,7 +138,6 @@ func CreatePlaylist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := formData.Name
-	log.Println(name)
 
 	currentTime := time.Now()
 	formattedTime := currentTime.Format("2006-01-02 15:04:05")
@@ -150,12 +155,14 @@ func CreatePlaylist(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeletePlaylist(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+
 	// Get the playlist ID from the request URL parameters
 	vars := mux.Vars(r)
 	id := vars["id"]
 
 	// Delete playlist_videos 
-	stmt, err := db.SQL.Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
+	stmt, err := db.Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
 
 	if err != nil {
 		http.Error(w, "Failed to delete playlist videos", http.StatusInternalServerError)
@@ -169,7 +176,7 @@ func DeletePlaylist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete the playlist from the database based on the ID
-	err = deletePlaylistFromDB(id)
+	err = deletePlaylistFromDB(id, db)
 
 	if err != nil {
 		// Check if the error is due to playlist not found
@@ -187,9 +194,9 @@ func DeletePlaylist(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func deletePlaylistFromDB(id string) error {
+func deletePlaylistFromDB(id string, db *sql.DB) error {
 	// Prepare the DELETE statement
-	stmt, err := db.SQL.Prepare("DELETE FROM playlists WHERE id = ?")
+	stmt, err := db.Prepare("DELETE FROM playlists WHERE id = ?")
 
 	if err != nil {
 		return err

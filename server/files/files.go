@@ -22,15 +22,27 @@ func getFilesFolderPath(rootPath string) string {
 	return filepath.Join(rootPath, "files")
 }
 
-func Initialize(rootPath string) {
-    CreateRootDataFolder(rootPath)
+// Check if the data folders exist
+// If not they are created
+func Initialize(rootPath string) error {
+    err := CreateRootDataFolder(rootPath)
+	if (err != nil)  {
+		return err
+	}
 	CreateFilesFolder(rootPath)
+    if (err != nil)  {
+		return err
+	}
 	CreateTempFolder(rootPath)
+    if (err != nil)  {
+		return err
+	}
+	return nil
 }
 
 // Creates the root data folder
 // This is where the database and video files and images are stored.
-func CreateRootDataFolder(rootPath string) {
+func CreateRootDataFolder(rootPath string) error {
 	var err error
 	if _, err = os.Stat(rootPath); errors.Is(err, os.ErrNotExist) {
 		err := os.Mkdir(rootPath, os.ModePerm)
@@ -39,25 +51,26 @@ func CreateRootDataFolder(rootPath string) {
 			log.Println(err)
 		}
 	}
+	return err
 }
 
 // This is where the video files are stored.
-func CreateFilesFolder(rootPath string) {
+func CreateFilesFolder(rootPath string) error {
 	path := filepath.Join(rootPath, "files")
 	var err error
 	if _, err = os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		err := os.Mkdir(path, os.ModePerm)
 		if err != nil {
 			log.Println("ERROR making files directory")
-			log.Println(err)
 		}
 	}
+	return err
 }
 
 // Creates a temporary folder 
 // This is where video files and images are 
 // temporarly stored while downloading. 
-func CreateTempFolder(rootPath string) {
+func CreateTempFolder(rootPath string) error {
 	path := GetTemporaryFolderPath(rootPath)
 	var err error
 	if _, err = os.Stat(path); errors.Is(err, os.ErrNotExist) {
@@ -67,6 +80,7 @@ func CreateTempFolder(rootPath string) {
 			log.Println(err)
 		}
 	}
+	return err
 }
 
 func GetFilePath(rootFolderPath string, fileID string, fileFormat string) string {

@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
 	"vidviewer/db"
+	"vidviewer/middleware"
 	"vidviewer/models"
 
 	"github.com/gorilla/mux"
@@ -23,6 +25,7 @@ type VideoItem struct {
 }
 
 func DeletePlaylistVideosGivenPlaylist(playlist_id int) error {
+
 	// Prepare the DELETE statement
 	stmt, err := db.SQL.Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
 
@@ -41,9 +44,9 @@ func DeletePlaylistVideosGivenPlaylist(playlist_id int) error {
 	return nil
 }
 
-func DeletePlaylistVideosFromDB(video_id int) error {
+func DeletePlaylistVideosFromDB(video_id int, db *sql.DB) error {
 	// Prepare the DELETE statement
-	stmt, err := db.SQL.Prepare("DELETE FROM playlist_videos WHERE video_id = ?")
+	stmt, err := db.Prepare("DELETE FROM playlist_videos WHERE video_id = ?")
 
 	if err != nil {
 		return err
@@ -61,6 +64,8 @@ func DeletePlaylistVideosFromDB(video_id int) error {
 }
 
 func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+
 	// Get the playlist ID from the URL path
 	vars := mux.Vars(r)
 	playlistIDStr := vars["id"]
@@ -87,7 +92,7 @@ func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Query the database to get all columns from the playlist with the join
-	rows, err := db.SQL.Query(query, playlistID)
+	rows, err := db.Query(query, playlistID)
 
 	if err != nil {
 		log.Fatal(err)
@@ -107,8 +112,8 @@ func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
 		DownloadComplete bool   `json:"download_complete"`
 		Duration         string    `json:"duration"`
 		DownloadDate     string `json:"download_date"`
-		FilePath     string `json:"file_path"`
-		ThumbnailPath     string `json:"thumnail_path"`
+		FilePath         string `json:"file_path"`
+		ThumbnailPath    string `json:"thumnail_path"`
 	}
 
 	videos := []VideoItem{}

@@ -17,12 +17,12 @@ import (
 	"vidviewer/config"
 	"vidviewer/db"
 	"vidviewer/files"
+	"vidviewer/middleware"
 	"vidviewer/models"
 	ws "vidviewer/websocket"
 	"vidviewer/ytdlp"
 
 	"github.com/gorilla/mux"
-
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -74,6 +74,10 @@ func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteVideo(w http.ResponseWriter, r *http.Request) {
+	// Get config from context
+	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath 
+	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+
 	// Get the video ID from the request URL parameters
 	vars := mux.Vars(r)
 	idParam := vars["id"]
@@ -95,7 +99,7 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// First delete playlist_videos 
-	err = DeletePlaylistVideosFromDB(id)
+	err = DeletePlaylistVideosFromDB(id, db)
 
     if err != nil {
 		// Check if the error is due to video not found
@@ -110,7 +114,7 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete the video from the database based on the ID
-	err = deleteVideoFromDB(id)
+	err = deleteVideoFromDB(id, db)
 
 	if err != nil {
 		// Check if the error is due to video not found
@@ -125,15 +129,15 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete the file and containing folders if they are empty
-	files.DeleteFiles(config.Load().FolderPath, fileID, fileEXT, "jpg")
+	files.DeleteFiles(rootFolderPath, fileID, fileEXT, "jpg")
 
 	// Return a 204 No Content response to indicate successful deletion
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func deleteVideoFromDB(id int) error {
+func deleteVideoFromDB(id int, db *sql.DB) error {
 	// Prepare the DELETE statement
-	stmt, err := db.SQL.Prepare("DELETE FROM videos WHERE id = ?")
+	stmt, err := db.Prepare("DELETE FROM videos WHERE id = ?")
 
 	if err != nil {
 		return err
@@ -172,6 +176,9 @@ func getFileIdAndExt(videoID int) (string, string, error) {
 }
 
 func GetVideo(w http.ResponseWriter, r *http.Request) {
+	// read from context
+	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath  // Type assert to your config type
+	db := r.Context().Value(middleware.DBKey).(*sql.DB)
 
 	// Get the video ID from the URL path
 	vars := mux.Vars(r)
@@ -185,11 +192,9 @@ func GetVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rootFolderPath := config.Load().FolderPath
-
 	video := models.Video{}
 
-	err = db.SQL.QueryRow("SELECT * FROM videos WHERE id = ?", videoID).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate)
+	err = db.QueryRow("SELECT * FROM videos WHERE id = ?", videoID).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate)
 
 	if err != nil {
 		log.Println(err.Error())
@@ -222,6 +227,7 @@ func GetVideo(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetVideoFormats(w http.ResponseWriter, r *http.Request) {
+
 	// Get the value of the "url" parameter from the URL query string
 	urlParam := r.URL.Query().Get("url")
 
@@ -248,7 +254,10 @@ func GetVideoFormats(w http.ResponseWriter, r *http.Request) {
 
 //TODO - clean up this function
 func CreateVideo(w http.ResponseWriter, r *http.Request) {
-	rootFolderPath := config.Load().FolderPath
+	// Context
+	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath
+	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+
 	tempFolderpath := files.GetTemporaryFolderPath(rootFolderPath)
 
 	var err error
@@ -303,7 +312,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 	downloadImgPathWithExt   := filepath.Join(tempFolderpath, fileID+".jpg")
 
 	// Create Video in db 
-	createVideoStatement, err := db.SQL.Prepare(`
+	createVideoStatement, err := db.Prepare(`
 		INSERT INTO videos (download_date, url, title, yt_id, file_id, duration, download_complete, file_format) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`)
@@ -338,7 +347,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create playlist video
-	createPlaylistVideosStatement, err := db.SQL.Prepare(`
+	createPlaylistVideosStatement, err := db.Prepare(`
 		INSERT INTO playlist_videos (playlist_id, video_id) 
 		VALUES (?, ?)
 	`)
