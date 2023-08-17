@@ -13,6 +13,7 @@ import { useDarkMode } from './hooks/useDarkMode';
 //import DownloadStatus from './components/DownloadStatus';
 import { useWebSocket } from 'react-use-websocket/dist/lib/use-websocket';
 import { useEvent } from './hooks/useEvent';
+import ConfigForm from './components/ConfigForm';
 
 export interface Playlist {
   id: number;
@@ -35,11 +36,13 @@ enum ModalState {
   editPlaylist,
   addPlaylist,
   settings,
+  config,
 }
 
 // Received websocket message types:
 const VIDEO_DOWNLOAD_SUCCESS = "video_download_success"
 const VIDEO_DOWNLOAD_FAIL    = "video_download_fail"
+const ROOT_FOLDER_NOT_FOUND  = "root_folder_not_found"
 
 type WebSocketMessage = {
   type: string 
@@ -52,6 +55,8 @@ const App: React.FC = () => {
   const [modalState, setModalState] = useState<ModalState>(ModalState.none);
 
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist>();
+
+  const [isConfigMissing, setIsConfigMissing] = useState<boolean>();
 
   // Current video that is open 
   const [selectedVideo, setSelectedVideo] = useState<Video>();
@@ -72,8 +77,6 @@ const App: React.FC = () => {
     try {
       const response = await fetch("http://localhost:8000/playlists");
       const data = await response.json() as Playlist[];
-
-      console.log(data)
 
       setPlaylists(data);
 
@@ -124,11 +127,12 @@ const App: React.FC = () => {
     setModalState(ModalState.none)
   }
 
-  // FETCH the playlists
-  // On initial render
+  // FETCH the playlists on initial render only after websocket connection is connected
   useEffect(() => {
+    if (readyState === WebSocket.CLOSED || readyState === WebSocket.CONNECTING)
+      return;
     fetchPlaylists().catch(e => console.log(e))
-  }, []);
+  }, [readyState]);
 
   // FETCH the playlist's videos
   // When user selects a playlist
@@ -144,7 +148,6 @@ const App: React.FC = () => {
       fetchPlaylistVideos(selectedPlaylist.id).catch(e => console.log(e))
     }
   })
-
 
   // Setup websocket connection
   useEffect(() => {
@@ -162,7 +165,10 @@ const App: React.FC = () => {
         console.log("Video download complete") 
         onVideoDownloadSuccess()
       }
-      else {
+      else if (message.type === ROOT_FOLDER_NOT_FOUND) {
+        setIsConfigMissing(true)
+        setModalState(ModalState.config)
+      } else {
         console.log(message.type) 
       }
     }
@@ -171,21 +177,21 @@ const App: React.FC = () => {
 
   return (
     <>
-      <Modal onClose={closeModal} isOpen={modalState !== ModalState.none}>
-        {modalState === ModalState.addVideo && (
+      <Modal isLocked={isConfigMissing} onClose={closeModal} isOpen={modalState !== ModalState.none}>
+        {modalState === ModalState.addVideo && 
           <AddVideoForm
             playlists={playlists}
             onSuccess={() => setModalState(ModalState.none)}
           />
-        )}
-        {modalState === ModalState.addPlaylist && (
+        }
+        {modalState === ModalState.addPlaylist && 
           <NewPlaylistForm
             onSuccess={() =>
               fetchPlaylists(() => setModalState(ModalState.none))
             }
           />
-        )}
-        {modalState === ModalState.editPlaylist && (
+        }
+        {modalState === ModalState.editPlaylist && 
           <EditPlaylistForm
             id={selectedPlaylistEdit?.id}
             initialName={selectedPlaylistEdit?.name}
@@ -193,8 +199,8 @@ const App: React.FC = () => {
               fetchPlaylists(() => setModalState(ModalState.none))
             }
           />
-        )}
-        {modalState === ModalState.editVideo && (
+        }
+        {modalState === ModalState.editVideo && 
           <EditVideoForm
             id={selectedVideoEdit?.id}
             initialTitle={selectedVideoEdit?.title}
@@ -208,7 +214,16 @@ const App: React.FC = () => {
               })
             }
           />
-        )}
+        }
+        {modalState == ModalState.config && 
+          <ConfigForm 
+            onSuccess={async () => {
+              setIsConfigMissing(false); 
+              setModalState(ModalState.none);
+              return fetchPlaylists().catch(e => console.log(e))
+            }}
+          />
+        }
       </Modal>
       <div className="min-h-screen h-fit dark:bg-neutral-950 dark:text-neutral-100">
         <Navbar
@@ -216,6 +231,7 @@ const App: React.FC = () => {
           toggleTheme={toggleDarkMode}
           isDarkMode={darkMode}
           openAddVideoMenu={onClickAddVideo}
+          openConfigMenu={()=>setModalState(ModalState.config)}
         />
         {!selectedVideo && (
           <LeftMenu

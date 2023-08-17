@@ -8,6 +8,17 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Websocket messages
+// NOTE - make sure client uses same value
+// TODO - move this to a shared json file?
+type MessageType string
+
+const (
+	VideoDownloadSuccess MessageType = "video_download_success"
+	VideoDownloadFail    MessageType = "video_download_fail"
+	RootFolderNotFound   MessageType = "root_folder_not_found"
+)
+
 type Client struct {
 	Connection *websocket.Conn
 }
@@ -54,6 +65,13 @@ func (hub *Hub) RemoveClient(client *Client) {
 }
 
 func (hub *Hub) WriteToClients(message WebsocketMessage) {
+	log.Println("writing to clients: " + message.Type)
+	
+	if (hub == nil) {
+	    log.Println("write to websocket failed, hub is nil")
+		return
+	}
+
 	hub.mutex.RLock()
 	defer hub.mutex.RUnlock()
 
@@ -66,6 +84,7 @@ func (hub *Hub) WriteToClients(message WebsocketMessage) {
 }
 
 func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+	log.Println("handling web socket connection")
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -94,6 +113,7 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		for {
 			// Read messages constantly and remove client if it's closed
 			_, _, err := client.Connection.ReadMessage()
+
 			if err != nil {
 				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					log.Println("WebSocket connection closed:", err)

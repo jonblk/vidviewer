@@ -13,7 +13,7 @@ import (
 )
 
 type Config struct {
-	FolderPath string `yaml:"folderPath"`
+	FolderPath string `yaml:"folderPath" json:"folder_path"`
 }
 
 func getRootPath() string {
@@ -25,7 +25,7 @@ func getConfigFilePath() string {
 	return filepath.Join(getRootPath(), "config.yaml")
 }
 
-func update(newConfig Config) {
+func Update(newConfig Config) {
 	data, err := yaml.Marshal(&newConfig)
 
 	if err != nil {
@@ -39,6 +39,10 @@ func update(newConfig Config) {
 		log.Println("Error writing file")
 		log.Fatal(err)
 	}
+}
+
+func Path() string {
+	return getConfigFilePath()
 }
 
 // Load, or create config.yaml if necessary
@@ -60,7 +64,7 @@ func Initialize() Config {
 	// Check if the config file exists
 	// and create it if it doesn't
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		update(Config{FolderPath: ""})
+		Update(Config{FolderPath: ""})
 	}
 
 	// Load

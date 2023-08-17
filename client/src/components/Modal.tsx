@@ -3,14 +3,15 @@ import React, { useEffect, useRef } from "react";
 interface ModalProps {
   onClose: () => void;
   isOpen: boolean;
+  isLocked?: boolean;
   children: React.ReactNode
 }
 
-const Modal: React.FC<ModalProps> = ({ onClose, isOpen, children }) => {
+const Modal: React.FC<ModalProps> = ({ onClose, isOpen, children, isLocked=false }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   const closeModal = () => {
-    onClose();
+    !isLocked && onClose();
   };
 
   const handleClickOutside = (event: MouseEvent) => {
@@ -45,12 +46,13 @@ const Modal: React.FC<ModalProps> = ({ onClose, isOpen, children }) => {
       {isOpen && (
         <div data-testid="modal" className="fixed inset-0 flex items-center justify-center bg-black dark:bg-opacity-90 bg-opacity-70 z-50">
           <div className="bg-white dark:bg-neutral-800 dark:text-neutral-300 rounded w-[250px] p-6 shadow-lg relative" ref={modalRef}>
-            <button
+            {!isLocked && <button
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 z-60"
               onClick={closeModal}
             >
               &#10005;
             </button>
+            }
             {children}
           </div>
         </div>

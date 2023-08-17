@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"vidviewer/config"
 	"vidviewer/routes"
 
 	"github.com/gorilla/handlers"
@@ -25,6 +26,8 @@ var (
 var devBuildEnabled bool
 
 func main() {
+	log.Println("Config file location is: " + config.Path())
+
 	// Initialize routes
 	r := routes.Initialize(assets, htmlFiles)
 

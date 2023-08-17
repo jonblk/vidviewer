@@ -25,7 +25,7 @@ func getFilesFolderPath(rootPath string) string {
 // Check if the data folders exist
 // If not they are created
 func Initialize(rootPath string) error {
-    err := CreateRootDataFolder(rootPath)
+    err := ValidateRootDataFolder(rootPath)
 	if (err != nil)  {
 		return err
 	}
@@ -42,16 +42,12 @@ func Initialize(rootPath string) error {
 
 // Creates the root data folder
 // This is where the database and video files and images are stored.
-func CreateRootDataFolder(rootPath string) error {
+func ValidateRootDataFolder(rootPath string) error {
 	var err error
 	if _, err = os.Stat(rootPath); errors.Is(err, os.ErrNotExist) {
-		err := os.Mkdir(rootPath, os.ModePerm)
-		if err != nil {
-			log.Println("ERROR making directory")
-			log.Println(err)
-		}
+		return err
 	}
-	return err
+	return nil
 }
 
 // This is where the video files are stored.

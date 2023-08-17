@@ -30,11 +30,6 @@ type VideoUpdate struct {
 	Title string `json:"title"`
 }
 
-// note these values have to correspond to client side code
-const (
-	VIDEO_DOWNLOAD_SUCCESS = "video_download_success"
-	VIDEO_DOWNLOAD_FAIL = "video_download_fail"
-)
 
 func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the ID parameter from the request URL
@@ -375,7 +370,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 	onDownloadExit := func(isError bool) {
 		if (isError) {
 			log.Println("Error during download! Notifying client.")
-			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: VIDEO_DOWNLOAD_FAIL})
+			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadFail)})
 			return 
 		}
 
@@ -402,8 +397,9 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		log.Println("Video download related processing complete.  Notifying client of success:")
+
 		// Write to websocket so client can refresh
-		ws.GetHub().WriteToClients(ws.WebsocketMessage{Type: VIDEO_DOWNLOAD_SUCCESS})
+		ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadSuccess)})
 	}
 
 	log.Println("begin video download...")

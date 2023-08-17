@@ -17,6 +17,11 @@ const DBKey MiddleWareKey = "Database"
 //  to handlers via router context
 func DBMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if (r.URL.Path == "/websocket" || r.URL.Path == "/config") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 	    rootFolderPath := r.Context().Value(ConfigKey).(config.Config).FolderPath 
 		sql := db.SQL
 
