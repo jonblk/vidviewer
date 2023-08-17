@@ -3,7 +3,6 @@ package db
 import (
 	"database/sql"
 	"log"
-	"sync"
 	"time"
 
 	migrate "github.com/golang-migrate/migrate/v4"
@@ -14,29 +13,38 @@ import (
 
 // Access the database using the db.SQL variable,
 // which is an instance of *sql.DB representing the connection pool
-var SQL *sql.DB
-var once sync.Once
 
-func initialize(dbPath string) {
-    var err error
-	SQL, err = sql.Open("sqlite3", dbPath)
+var dbs map[string]*sql.DB
 
-	if err != nil {
-		log.Println("Error creating SQLITE connection pool")
-		panic(err)
-	}
-
-		// Set connection pool size
-	SQL.SetMaxOpenConns(10)
-	SQL.SetMaxIdleConns(5)
-	SQL.SetConnMaxIdleTime(5 * time.Minute)
-
-	runMigrations(dbPath)
+func GetDB(path string) (*sql.DB, bool) {
+  _, exists := dbs[path] 
+	return dbs[path], exists 
 }
 
-func Initialize(dbPath string) *sql.DB{
-	once.Do(func() {initialize(dbPath)})
-	return SQL
+func Initialize(dbPath string) *sql.DB {
+	if dbs == nil {
+    dbs = make(map[string]*sql.DB)
+  }
+
+  var err error
+
+	if _, exists := dbs[dbPath]; !exists {
+		dbs[dbPath], err = sql.Open("sqlite3", dbPath)
+
+		if err != nil {
+			log.Println("Error creating SQLITE connection pool")
+			panic(err)
+		}
+
+		// Set connection pool size
+		dbs[dbPath].SetMaxOpenConns(10)
+		dbs[dbPath].SetMaxIdleConns(5)
+		dbs[dbPath].SetConnMaxIdleTime(5 * time.Minute)
+
+		runMigrations(dbPath)
+	}
+
+	return dbs[dbPath]
 }
 
 func runMigrations(dbPath string) {

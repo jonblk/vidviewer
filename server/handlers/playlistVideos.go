@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"vidviewer/db"
 	"vidviewer/middleware"
 	"vidviewer/models"
 
@@ -24,10 +23,10 @@ type VideoItem struct {
 	Url    string `json:"url"`
 }
 
-func DeletePlaylistVideosGivenPlaylist(playlist_id int) error {
+func DeletePlaylistVideosGivenPlaylist(playlist_id int, db *sql.DB) error {
 
 	// Prepare the DELETE statement
-	stmt, err := db.SQL.Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
+	stmt, err := db.Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
 
 	if err != nil {
 		return err

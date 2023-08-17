@@ -15,7 +15,6 @@ import (
 	"strconv"
 	"time"
 	"vidviewer/config"
-	"vidviewer/db"
 	"vidviewer/files"
 	"vidviewer/middleware"
 	"vidviewer/models"
@@ -32,6 +31,8 @@ type VideoUpdate struct {
 
 
 func UpdateVideo(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+
 	// Retrieve the ID parameter from the request URL
 	vars := mux.Vars(r)
 	idParam := vars["id"]
@@ -50,7 +51,7 @@ func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Prepare the SQL update statement
-	stmt, err := db.SQL.Prepare("UPDATE videos SET title = ? WHERE id = ?")
+	stmt, err := db.Prepare("UPDATE videos SET title = ? WHERE id = ?")
 	if err != nil {
 		http.Error(w, "Failed to prepare update statement", http.StatusInternalServerError)
 		return
@@ -80,7 +81,7 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 
 	// get the file_id and file_format  
 	// to use for deleting folders and files
-	fileID, fileEXT, err := getFileIdAndExt(id)
+	fileID, fileEXT, err := getFileIdAndExt(id, db)
     if err != nil {
 		// Check if the error is due to video not found
 		if err == sql.ErrNoRows {
@@ -150,12 +151,12 @@ func deleteVideoFromDB(id int, db *sql.DB) error {
 }
 
 // Fetches a video and returns the file ID
-func getFileIdAndExt(videoID int) (string, string, error) {
+func getFileIdAndExt(videoID int, db *sql.DB) (string, string, error) {
 	var fileID string
 	var fileEXT string
 
 	// Prepare the SQL statement
-	stmt, err := db.SQL.Prepare("SELECT file_id, file_format FROM videos WHERE id = ?")
+	stmt, err := db.Prepare("SELECT file_id, file_format FROM videos WHERE id = ?")
 	if err != nil {
 		return "", "", fmt.Errorf("failed to prepare SQL statement: %w", err)
 	}
@@ -299,7 +300,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 
 	currentDate := time.Now().Format("2006-01-02")
 
-	fileID, _ := generateFileID()
+	fileID, _ := generateFileID(db)
 
 	//downloadVideoPath := filepath.Join(tempFolderpath, fileID) 
 	downloadImgPath   := filepath.Join(tempFolderpath, fileID)
@@ -375,7 +376,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update video in db
-		updateVideoOnDownloadSuccess()
+		updateVideoOnDownloadSuccess(db)
 
 		log.Println("youtube id is :" + ytID)
        
@@ -427,9 +428,9 @@ func extractThumbnail(videoPath, outputPath string) error {
 	return nil
 }
 
-func updateVideoOnDownloadSuccess() {
+func updateVideoOnDownloadSuccess(db *sql.DB) {
     // Prepare the SQL statement for inserting a row
-	stmt, err := db.SQL.Prepare("INSERT INTO videos (download_complete, download_date) VALUES (?, ?)")
+	stmt, err := db.Prepare("INSERT INTO videos (download_complete, download_date) VALUES (?, ?)")
 
 	if err != nil {
 		log.Println(err)
@@ -442,9 +443,9 @@ func updateVideoOnDownloadSuccess() {
 	_, _ = stmt.Exec(true, formattedTime)
 }
 
-func checkFileIDExists(fileID string) (bool, error) {
+func checkFileIDExists(fileID string, db *sql.DB) (bool, error) {
 	// Prepare the SQL statement
-	stmt, err := db.SQL.Prepare("SELECT COUNT(*) FROM videos WHERE file_id = ?")
+	stmt, err := db.Prepare("SELECT COUNT(*) FROM videos WHERE file_id = ?")
 	if err != nil {
 		return false, err
 	}
@@ -463,7 +464,7 @@ func checkFileIDExists(fileID string) (bool, error) {
 	return exists, nil
 }
 
-func generateFileID() (string, error) {
+func generateFileID(db *sql.DB) (string, error) {
 	// Define the set of alphanumeric characters
 	alphanumeric := "abcdef0123456789"
 
@@ -482,7 +483,7 @@ func generateFileID() (string, error) {
 		}
 
 		// Check if the file ID exists in the table
-		exists, err := checkFileIDExists(fileID)
+		exists, err := checkFileIDExists(fileID, db)
 		if err != nil {
 			return "", err
 		}

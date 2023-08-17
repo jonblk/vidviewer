@@ -55,6 +55,8 @@ func UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.FolderPath = rootFolderPath
+
 	config.Update(c)
-	log.Println("Config Update Succesful, new path is: " + c.FolderPath)
+
+	log.Println("Config Update Succesful, current root folder path is: " + c.FolderPath)
 }

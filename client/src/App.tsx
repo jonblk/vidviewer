@@ -220,7 +220,7 @@ const App: React.FC = () => {
             onSuccess={async () => {
               setIsConfigMissing(false); 
               setModalState(ModalState.none);
-              return fetchPlaylists().catch(e => console.log(e))
+              return fetchPlaylists(() => setSelectedPlaylist(playlists[0])).catch(e => console.log(e))
             }}
           />
         }

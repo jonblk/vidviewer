@@ -12,7 +12,6 @@ import (
 
 const DBKey MiddleWareKey = "Database"
 
-
 //  Initializes DB (if nil) and passes it 
 //  to handlers via router context
 func DBMiddleware(next http.Handler) http.Handler {
@@ -23,12 +22,13 @@ func DBMiddleware(next http.Handler) http.Handler {
 		}
 
 	    rootFolderPath := r.Context().Value(ConfigKey).(config.Config).FolderPath 
-		sql := db.SQL
+		dbPath := files.GetDatabasePath(rootFolderPath)
+
+		sql, exists := db.GetDB(dbPath)
 
 		// Initialize DB if its nil
-		if (sql == nil) {
+		if (!exists) {
 			// Path to database
-			dbPath := files.GetDatabasePath(rootFolderPath)
 
 			// Initialize database
 			sql = db.Initialize(dbPath)
