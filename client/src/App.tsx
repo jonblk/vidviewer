@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import LeftMenu from './components/LeftMenu';
 import VideoGrid from './components/VideoGrid';
@@ -51,50 +51,59 @@ type WebSocketMessage = {
 
 const App: React.FC = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [videos, setVideos] = useState<Video[]>([])
+  const [videos, setVideos] = useState<Video[]>([]);
   const [modalState, setModalState] = useState<ModalState>(ModalState.none);
 
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist>();
 
   const [isConfigMissing, setIsConfigMissing] = useState<boolean>();
 
-  // Current video that is open 
+  const [volume, setVolume] = useState<number>(1);
+  const [muted, setMuted] = useState<boolean>(false);
+
+  // Current video that is open
   const [selectedVideo, setSelectedVideo] = useState<Video>();
 
   // Current playlist that is selected to be edited
-  const [selectedPlaylistEdit, setSelectedPlaylistEdit] = useState<Playlist>()
+  const [selectedPlaylistEdit, setSelectedPlaylistEdit] = useState<Playlist>();
 
   // Current video that is selected to be edited
-  const [selectedVideoEdit, setSelectedVideoEdit] = useState<Video>()
+  const [selectedVideoEdit, setSelectedVideoEdit] = useState<Video>();
 
   // Set the dark/light visual mode
-  const [darkMode, toggleDarkMode] = useDarkMode()
+  const [darkMode, toggleDarkMode] = useDarkMode();
 
   // Establish websocket connection
-  const { lastMessage, readyState } = useWebSocket('ws://localhost:8000/websocket');
+  const { lastMessage, readyState } = useWebSocket(
+    "ws://localhost:8000/websocket"
+  );
 
   const fetchPlaylists = async (callback?: () => void) => {
     try {
       const response = await fetch("http://localhost:8000/playlists");
-      const data = await response.json() as Playlist[];
+      const data = (await response.json()) as Playlist[];
 
       setPlaylists(data);
 
       if (callback) callback();
-
     } catch (error) {
       console.error("Error fetching playlists:", error);
     }
   };
 
-  const fetchPlaylistVideos = async (id: number | undefined, onSuccess?: (videos: Video[]) => void) => {
+  const fetchPlaylistVideos = async (
+    id: number | undefined,
+    onSuccess?: (videos: Video[]) => void
+  ) => {
     if (id === undefined) {
-      throw("Error, playlist_id is undefined")
+      throw "Error, playlist_id is undefined";
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/playlist_videos/${id}`);
-      const data = await response.json() as Video[];
+      const response = await fetch(
+        `http://localhost:8000/playlist_videos/${id}`
+      );
+      const data = (await response.json()) as Video[];
       setVideos(data);
 
       if (onSuccess) {
@@ -102,96 +111,105 @@ const App: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching playlist videos:", error);
-    } 
+    }
   };
 
   const onClickAddVideo = () => {
-    setModalState(ModalState.addVideo)
-  }
+    setModalState(ModalState.addVideo);
+  };
 
   const onClickEditPlaylist = (playlist: Playlist) => {
-    setModalState(ModalState.editPlaylist)
-    setSelectedPlaylistEdit(playlist)
-  }
+    setModalState(ModalState.editPlaylist);
+    setSelectedPlaylistEdit(playlist);
+  };
 
   const onClickEditVideo = (video: Video) => {
-    setModalState(ModalState.editVideo)
-    setSelectedVideoEdit(video)
-  }
+    setModalState(ModalState.editVideo);
+    setSelectedVideoEdit(video);
+  };
 
   const onClickNewPlaylist = () => {
-    setModalState(ModalState.addPlaylist)
-  }
+    setModalState(ModalState.addPlaylist);
+  };
 
   const closeModal = () => {
-    setModalState(ModalState.none)
-  }
+    setModalState(ModalState.none);
+  };
 
   // FETCH the playlists on initial render only after websocket connection is connected
   useEffect(() => {
     if (readyState === WebSocket.CLOSED || readyState === WebSocket.CONNECTING)
       return;
-    fetchPlaylists().catch(e => console.log(e))
+    fetchPlaylists().catch((e) => console.log(e));
   }, [readyState]);
 
   // FETCH the playlist's videos
   // When user selects a playlist
   useEffect(() => {
     if (selectedPlaylist) {
-      fetchPlaylistVideos(selectedPlaylist.id).catch(e => console.log(e))
+      fetchPlaylistVideos(selectedPlaylist.id).catch((e) => console.log(e));
     }
-  }, [selectedPlaylist])
+  }, [selectedPlaylist]);
 
-  const onVideoDownloadSuccess = useEvent(() =>{
+  const onVideoDownloadSuccess = useEvent(() => {
     // Update the UI
     if (selectedPlaylist) {
-      fetchPlaylistVideos(selectedPlaylist.id).catch(e => console.log(e))
+      fetchPlaylistVideos(selectedPlaylist.id).catch((e) => console.log(e));
     }
-  })
+  });
 
   // Setup websocket connection
   useEffect(() => {
-  // Handle lastMessage
-  if (readyState === WebSocket.OPEN && lastMessage) {
-    console.log("Websocket message receieved: ")
-    console.log(lastMessage)
-    if (lastMessage.data && typeof lastMessage.data === "string") {
-      const message: WebSocketMessage = JSON.parse(lastMessage.data) as WebSocketMessage;
+    // Handle lastMessage
+    if (readyState === WebSocket.OPEN && lastMessage) {
+      console.log("Websocket message receieved: ");
+      console.log(lastMessage);
+      if (lastMessage.data && typeof lastMessage.data === "string") {
+        const message: WebSocketMessage = JSON.parse(
+          lastMessage.data
+        ) as WebSocketMessage;
 
-      if (message.type === VIDEO_DOWNLOAD_FAIL) {
-        console.error("Video download failed") 
-      } 
-      else if (message.type === VIDEO_DOWNLOAD_SUCCESS) {
-        console.log("Video download complete") 
-        onVideoDownloadSuccess()
-      }
-      else if (message.type === ROOT_FOLDER_NOT_FOUND) {
-        setIsConfigMissing(true)
-        setModalState(ModalState.config)
-      } else {
-        console.log(message.type) 
+        if (message.type === VIDEO_DOWNLOAD_FAIL) {
+          console.error("Video download failed");
+        } else if (message.type === VIDEO_DOWNLOAD_SUCCESS) {
+          console.log("Video download complete");
+          onVideoDownloadSuccess();
+        } else if (message.type === ROOT_FOLDER_NOT_FOUND) {
+          setIsConfigMissing(true);
+          setModalState(ModalState.config);
+        } else {
+          console.log(message.type);
+        }
       }
     }
-  }
-},[readyState, lastMessage, onVideoDownloadSuccess])
+  }, [readyState, lastMessage, onVideoDownloadSuccess]);
+
+  const updateVideoControls = useCallback((v: number, m: boolean) => {
+    setVolume(v);
+    setMuted(m);
+  }, []);
 
   return (
     <>
-      <Modal isLocked={isConfigMissing} onClose={closeModal} isOpen={modalState !== ModalState.none}>
-        {modalState === ModalState.addVideo && 
+      <Modal
+        isLocked={isConfigMissing}
+        onClose={closeModal}
+        isOpen={modalState !== ModalState.none}
+      >
+        {modalState === ModalState.addVideo && (
           <AddVideoForm
             playlists={playlists}
             onSuccess={() => setModalState(ModalState.none)}
           />
-        }
-        {modalState === ModalState.addPlaylist && 
+        )}
+        {modalState === ModalState.addPlaylist && (
           <NewPlaylistForm
             onSuccess={() =>
               fetchPlaylists(() => setModalState(ModalState.none))
             }
           />
-        }
-        {modalState === ModalState.editPlaylist && 
+        )}
+        {modalState === ModalState.editPlaylist && (
           <EditPlaylistForm
             id={selectedPlaylistEdit?.id}
             initialName={selectedPlaylistEdit?.name}
@@ -199,8 +217,8 @@ const App: React.FC = () => {
               fetchPlaylists(() => setModalState(ModalState.none))
             }
           />
-        }
-        {modalState === ModalState.editVideo && 
+        )}
+        {modalState === ModalState.editVideo && (
           <EditVideoForm
             id={selectedVideoEdit?.id}
             initialTitle={selectedVideoEdit?.title}
@@ -214,16 +232,18 @@ const App: React.FC = () => {
               })
             }
           />
-        }
-        {modalState == ModalState.config && 
-          <ConfigForm 
+        )}
+        {modalState == ModalState.config && (
+          <ConfigForm
             onSuccess={async () => {
-              setIsConfigMissing(false); 
+              setIsConfigMissing(false);
               setModalState(ModalState.none);
-              return fetchPlaylists(() => setSelectedPlaylist(playlists[0])).catch(e => console.log(e))
+              return fetchPlaylists(() =>
+                setSelectedPlaylist(playlists[0])
+              ).catch((e) => console.log(e));
             }}
           />
-        }
+        )}
       </Modal>
       <div className="min-h-screen h-fit dark:bg-neutral-950 dark:text-neutral-100">
         <Navbar
@@ -231,7 +251,7 @@ const App: React.FC = () => {
           toggleTheme={toggleDarkMode}
           isDarkMode={darkMode}
           openAddVideoMenu={onClickAddVideo}
-          openConfigMenu={()=>setModalState(ModalState.config)}
+          openConfigMenu={() => setModalState(ModalState.config)}
         />
         {!selectedVideo && (
           <LeftMenu
@@ -254,6 +274,7 @@ const App: React.FC = () => {
           ) : (
             <div className="flex flex-col w-full">
               <Video
+                initialVolume={volume}
                 setSelectedVideo={setSelectedVideo}
                 videoId={selectedVideo.id}
               />
