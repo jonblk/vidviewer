@@ -27,8 +27,8 @@ import (
 
 type VideoUpdate struct {
 	Title string `json:"title"`
+	Playlists []VideoPlaylist `json:"videoPlaylists"`
 }
-
 
 func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(middleware.DBKey).(*sql.DB)
@@ -49,6 +49,9 @@ func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to parse JSON body", http.StatusBadRequest)
 		return
 	}
+
+	// Update video playlists
+	UpdateVideoPlaylists(db, id, videoUpdate.Playlists)
 
 	// Prepare the SQL update statement
 	stmt, err := db.Prepare("UPDATE videos SET title = ? WHERE id = ?")

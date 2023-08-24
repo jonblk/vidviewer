@@ -27,6 +27,7 @@ export interface Video {
   title: string;
   duration: string;
   url: string
+  playlists: Playlist[]
 }
 
 enum ModalState {
@@ -218,14 +219,15 @@ const App: React.FC = () => {
             }
           />
         )}
-        {modalState === ModalState.editVideo && (
+        {modalState === ModalState.editVideo && selectedVideoEdit && (
           <EditVideoForm
-            id={selectedVideoEdit?.id}
-            initialTitle={selectedVideoEdit?.title}
+            allPlaylists={playlists.slice(1)} /* remove 'ALL' from playlists */ 
+            id={selectedVideoEdit.id}
+            initialTitle={selectedVideoEdit.title}
             onSuccess={() =>
               fetchPlaylistVideos(selectedPlaylist?.id, (videos: Video[]) => {
                 setModalState(ModalState.none);
-                // update selected video
+                // update currently playing video
                 setSelectedVideo(
                   videos.find((v) => v.id === selectedVideo?.id)
                 );

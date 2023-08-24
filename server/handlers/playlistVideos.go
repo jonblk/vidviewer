@@ -19,12 +19,11 @@ type VideoItem struct {
 	FilePath string `json:"file_path"`
     SongPath string `json:"song_path"`
 	Title    string `json:"title"`
-	Duration    string `json:"duration"`
-	Url    string `json:"url"`
+	Duration string `json:"duration"`
+	Url      string `json:"url"`
 }
 
 func DeletePlaylistVideosGivenPlaylist(playlist_id int, db *sql.DB) error {
-
 	// Prepare the DELETE statement
 	stmt, err := db.Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
 

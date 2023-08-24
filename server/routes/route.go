@@ -107,7 +107,6 @@ func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
 	Router.HandleFunc("/playlists", handlers.GetAllPlaylists).Methods("GET")
 	Router.HandleFunc("/playlists/{id}", handlers.UpdatePlaylist).Methods("PUT")
 	Router.HandleFunc("/playlists/{id}", handlers.DeletePlaylist).Methods("DELETE")
-	Router.HandleFunc("/playlist_videos/{id}", handlers.GetPlaylistVideos).Methods("GET")
 
 	// VIDEOS 
 	Router.HandleFunc("/videos", handlers.CreateVideo).Methods("POST")
@@ -115,6 +114,9 @@ func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
 	Router.HandleFunc("/videos/{id}", handlers.UpdateVideo).Methods("PUT")
 	Router.HandleFunc("/videos/{id}", handlers.DeleteVideo).Methods("DELETE")
 	Router.HandleFunc("/video_formats", handlers.GetVideoFormats).Methods("GET")
-	
+
+	Router.HandleFunc("/playlist_videos/{id}", handlers.GetPlaylistVideos).Methods("GET")
+	Router.HandleFunc("/video_playlists/{id}", handlers.GetVideoPlaylists).Methods("GET")
+
 	return Router
 }

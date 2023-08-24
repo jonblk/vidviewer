@@ -46,15 +46,14 @@ HTML files and assets are served from port 8000 when running the production  ser
 - add ssl
 - add login ? 
 - add file_format options other than mp4 ? 
-- add testing
-- add pagination
+- add pagination or infinite scroll for videos
 - <s>add 'All videos' view option</s>
 - improve react performance 
 - <s>add video resolution options</s>
 - add 'cancel download' button
 - add import local files feature
-- add playlists dropdown in edit video form
+- <s>add playlists checkbox list in editVideoForm</s>
 - add option for additional development data folder
-- add settings menu (update data folder path, videos per page)
+- <s>add settings menu (update data folder path, videos per page)</s>
 - add error messages if ffmpeg, and yt-dlp not found on system
 - <s>add websocket and update client when video processing complete </s>

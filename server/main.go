@@ -14,7 +14,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-
 var (
 	//go:embed build/*.html
 	htmlFiles embed.FS
