@@ -68,6 +68,23 @@ func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	playlistIDStr := vars["id"]
 
+	queryParams := r.URL.Query()
+
+	pageStr := queryParams.Get("page")
+	if pageStr == "" {
+		pageStr = "1"
+	}
+	limitStr := queryParams.Get("limit")
+	if limitStr == "" {
+		limitStr = "10"
+	}
+
+	page, _ := strconv.Atoi(pageStr)
+	limit, _ := strconv.Atoi(limitStr)
+
+	log.Println(limit)
+	log.Println(page)
+
 	// Convert the playlist ID to an integer
 	playlistID, err := strconv.Atoi(playlistIDStr)
 	if err != nil {
@@ -78,19 +95,29 @@ func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
 
 	var query string
 
+	var rows *sql.Rows
+
 	if (ALL_PLAYLIST_ID != playlistID) {
 		query = `
 		SELECT v.*
 		FROM videos AS v
 		JOIN playlist_videos AS pv ON v.id = pv.video_id
 		WHERE pv.playlist_id = ?
+		ORDER BY id ASC
+        LIMIT ? 
+		OFFSET ?
 	    `
+	   rows, err = db.Query(query, playlistID, limit, (page-1)*limit)
 	} else {
-		query = "SELECT * FROM videos WHERE download_complete = 0"
+		query = `
+		SELECT * FROM videos 
+		WHERE download_complete = 0 
+		ORDER BY id ASC
+        LIMIT ? 
+		OFFSET ?
+		`
+	    rows, err = db.Query(query, limit, (page-1)*limit)
 	}
-
-	// Query the database to get all columns from the playlist with the join
-	rows, err := db.Query(query, playlistID)
 
 	if err != nil {
 		log.Fatal(err)
@@ -131,6 +158,8 @@ func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
 		videoItem.Url = video.Url
 		videos = append(videos, videoItem)
 	}
+
+	log.Println(videos)
 
 	// Check for any errors during iteration
 	err = rows.Err()

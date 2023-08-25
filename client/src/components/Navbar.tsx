@@ -1,7 +1,7 @@
 import React from 'react';
 import { FiSettings } from 'react-icons/fi';
 import { HiOutlineMoon, HiOutlineSun } from 'react-icons/hi';
-import { IoIosAdd, IoIosSettings } from 'react-icons/io';
+import { IoIosAdd } from 'react-icons/io';
 
 interface NavbarProps {
   isVideoMode: boolean;

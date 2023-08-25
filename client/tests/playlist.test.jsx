@@ -326,7 +326,7 @@ describe("update playlist", () => {
 
 describe("user selects playlist", () => {
   let fetchSpy; 
-  const path = `http://localhost:8000/playlist_videos/${playlist.id}`
+  const path = `http://localhost:8000/playlist_videos/${playlist.id}?page=1&limit=25`
 
   beforeEach(async () => {
     fetchSpy = vi.spyOn(global, "fetch");

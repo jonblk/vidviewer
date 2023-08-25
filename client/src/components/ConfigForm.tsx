@@ -58,6 +58,7 @@ const ConfigForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
       <div className="mb-4">
         <Label htmlFor="title">Root Folder</Label>
         <Input
+          type="input"
           value={rootFolderPath}
           label="root folder path"
           id="root_folder_path"

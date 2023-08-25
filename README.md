@@ -46,7 +46,7 @@ HTML files and assets are served from port 8000 when running the production  ser
 - add ssl
 - add login ? 
 - add file_format options other than mp4 ? 
-- add pagination or infinite scroll for videos
+- <s>add infinite scroll to videos </s>
 - <s>add 'All videos' view option</s>
 - improve react performance 
 - <s>add video resolution options</s>

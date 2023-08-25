@@ -5,8 +5,8 @@ import { Playlist } from '../App';
 
 interface LeftMenuProps {
   playlists: Playlist[];
-  setSelectedPlaylist: React.Dispatch<React.SetStateAction<Playlist | undefined>>; 
-  selectedPlaylist: Playlist | undefined; // the playlist id
+  setSelectedPlaylist: (v: Playlist ) => void; 
+  selectedPlaylist: Playlist | undefined ; // the playlist id
   onClickOpenEditPlaylistMenu: (playlist: Playlist) => void;
   onClickOpenNewPlaylistMenu:  () => void;
 }

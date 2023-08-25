@@ -1,6 +1,3 @@
-import React, { useState } from 'react';
-import { Playlist } from '../App';
-
 interface CheckboxOption<T> {
   label: string;
   value: T;

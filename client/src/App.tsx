@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import LeftMenu from './components/LeftMenu';
 import VideoGrid from './components/VideoGrid';
@@ -27,7 +27,6 @@ export interface Video {
   title: string;
   duration: string;
   url: string
-  playlists: Playlist[]
 }
 
 enum ModalState {
@@ -52,15 +51,14 @@ type WebSocketMessage = {
 
 const App: React.FC = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [videos, setVideos] = useState<Video[]>([]);
   const [modalState, setModalState] = useState<ModalState>(ModalState.none);
 
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist>();
 
   const [isConfigMissing, setIsConfigMissing] = useState<boolean>();
 
-  const [volume, setVolume] = useState<number>(1);
-  const [muted, setMuted] = useState<boolean>(false);
+
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
   // Current video that is open
   const [selectedVideo, setSelectedVideo] = useState<Video>();
@@ -89,29 +87,6 @@ const App: React.FC = () => {
       if (callback) callback();
     } catch (error) {
       console.error("Error fetching playlists:", error);
-    }
-  };
-
-  const fetchPlaylistVideos = async (
-    id: number | undefined,
-    onSuccess?: (videos: Video[]) => void
-  ) => {
-    if (id === undefined) {
-      throw "Error, playlist_id is undefined";
-    }
-
-    try {
-      const response = await fetch(
-        `http://localhost:8000/playlist_videos/${id}`
-      );
-      const data = (await response.json()) as Video[];
-      setVideos(data);
-
-      if (onSuccess) {
-        onSuccess(data);
-      }
-    } catch (error) {
-      console.error("Error fetching playlist videos:", error);
     }
   };
 
@@ -144,18 +119,11 @@ const App: React.FC = () => {
     fetchPlaylists().catch((e) => console.log(e));
   }, [readyState]);
 
-  // FETCH the playlist's videos
-  // When user selects a playlist
-  useEffect(() => {
-    if (selectedPlaylist) {
-      fetchPlaylistVideos(selectedPlaylist.id).catch((e) => console.log(e));
-    }
-  }, [selectedPlaylist]);
-
   const onVideoDownloadSuccess = useEvent(() => {
     // Update the UI
     if (selectedPlaylist) {
-      fetchPlaylistVideos(selectedPlaylist.id).catch((e) => console.log(e));
+      setLastUpdate(Date.now())
+      //fetchPlaylistVideos(selectedPlaylist.id).catch((e) => console.log(e));
     }
   });
 
@@ -163,8 +131,6 @@ const App: React.FC = () => {
   useEffect(() => {
     // Handle lastMessage
     if (readyState === WebSocket.OPEN && lastMessage) {
-      console.log("Websocket message receieved: ");
-      console.log(lastMessage);
       if (lastMessage.data && typeof lastMessage.data === "string") {
         const message: WebSocketMessage = JSON.parse(
           lastMessage.data
@@ -185,10 +151,7 @@ const App: React.FC = () => {
     }
   }, [readyState, lastMessage, onVideoDownloadSuccess]);
 
-  const updateVideoControls = useCallback((v: number, m: boolean) => {
-    setVolume(v);
-    setMuted(m);
-  }, []);
+
 
   return (
     <>
@@ -224,15 +187,11 @@ const App: React.FC = () => {
             allPlaylists={playlists.slice(1)} /* remove 'ALL' from playlists */ 
             id={selectedVideoEdit.id}
             initialTitle={selectedVideoEdit.title}
-            onSuccess={() =>
-              fetchPlaylistVideos(selectedPlaylist?.id, (videos: Video[]) => {
-                setModalState(ModalState.none);
-                // update currently playing video
-                setSelectedVideo(
-                  videos.find((v) => v.id === selectedVideo?.id)
-                );
-              })
-            }
+            onSuccess={() => {
+              setLastUpdate(Date.now())
+              setModalState(ModalState.none);
+              return Promise.resolve()
+            }}
           />
         )}
         {modalState == ModalState.config && (
@@ -261,14 +220,15 @@ const App: React.FC = () => {
             onClickOpenNewPlaylistMenu={onClickNewPlaylist}
             playlists={playlists}
             selectedPlaylist={selectedPlaylist}
-            setSelectedPlaylist={setSelectedPlaylist}
+            setSelectedPlaylist={(p: Playlist)=>{setSelectedPlaylist(p); setLastUpdate(Date.now())}}
           />
         )}
         <main className={"pt-14" + (selectedVideo ? "" : " pl-60")}>
           {!selectedVideo ? (
-            videos.length > 0 && (
+            selectedPlaylist && (
               <VideoGrid
-                videos={videos}
+                key={lastUpdate} // unmount when updated so the videos/page are reset
+                playlistId={selectedPlaylist.id}
                 onClickEditVideo={onClickEditVideo}
                 onClickOpenVideo={setSelectedVideo}
               />
@@ -276,7 +236,6 @@ const App: React.FC = () => {
           ) : (
             <div className="flex flex-col w-full">
               <Video
-                initialVolume={volume}
                 setSelectedVideo={setSelectedVideo}
                 videoId={selectedVideo.id}
               />
