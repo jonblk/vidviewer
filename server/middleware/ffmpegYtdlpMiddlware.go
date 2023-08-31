@@ -3,10 +3,11 @@ package middleware
 import (
 	"net/http"
 	"os/exec"
+	"vidviewer/errors"
 	ws "vidviewer/websocket"
 )
 
-// Checks if ffmpeg and Ytdlp installed on system.
+// Checks if ffmpeg and yt-dlp installed on system.
 // Writes error message to websocket if not found.
 func FfmpegYtdlpMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -18,20 +19,19 @@ func FfmpegYtdlpMiddleware(next http.Handler) http.Handler {
 
 		var err error
 
-		// If there is no folder path, or if folderpath does not exist
-		// notify the client via websocket
 		_, err = exec.LookPath("ffmpeg")
-
 		if (err != nil) {
 			ws.GetHub().WriteToClients(ws.WebsocketMessage{Type: string(ws.FfmpegNotFound)})
-			http.Error(w, "Bad Request - no ffmpeg not found", http.StatusBadRequest)
+            error := errors.FfmpegNotFoundError()
+			http.Error(w, error.Error(), error.StatusCode)
 			return
 		}
 
 		_, err = exec.LookPath("yt-dlp")
         if (err != nil) {
 			ws.GetHub().WriteToClients(ws.WebsocketMessage{Type: string(ws.YtdlpNotFound)})
-			http.Error(w, "Bad Request - no ytdlp not found", http.StatusBadRequest)
+            error := errors.YtdlpNotFoundError()
+			http.Error(w, error.Error(), error.StatusCode)
 			return
 		}
 

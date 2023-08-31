@@ -49,7 +49,7 @@ func UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	rootFolderPath := formData.RootFolderPath
 
     if _, err = os.Stat(rootFolderPath); errors.Is(err, os.ErrNotExist) {
-		error := customErrors.NewRootFolderNotFoundError()
+		error := customErrors.RootFolderNotFoundError()
 		http.Error(w, error.Error(), error.StatusCode)
 		return
 	}

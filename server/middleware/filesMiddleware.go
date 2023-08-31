@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"vidviewer/config"
+	"vidviewer/errors"
 	"vidviewer/files"
 	ws "vidviewer/websocket"
 )
@@ -19,7 +20,8 @@ func FilesMiddleware(next http.Handler) http.Handler {
 
 		if (rootFolderPath == "") {
 			ws.GetHub().WriteToClients(ws.WebsocketMessage{Type: string(ws.RootFolderNotFound)})
-			http.Error(w, "Bad Request - no root folder path found", http.StatusBadRequest)
+			error := errors.RootFolderNotFoundError()
+			http.Error(w, error.Error(), error.StatusCode)
 		} else {
 			err := files.Initialize(rootFolderPath)
 			if err != nil {
