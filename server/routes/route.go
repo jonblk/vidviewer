@@ -82,6 +82,7 @@ func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
     Router = mux.NewRouter()
 
 	// Middleware 
+	Router.Use(middleware.FfmpegYtdlpMiddleware)
 	Router.Use(middleware.ConfigMiddleware)
 	Router.Use(middleware.FilesMiddleware)
 	Router.Use(middleware.DBMiddleware)

@@ -37,12 +37,16 @@ enum ModalState {
   addPlaylist,
   settings,
   config,
+  ffmpegNotFound,
+  ytdlpNotFound
 }
 
 // Received websocket message types:
 const VIDEO_DOWNLOAD_SUCCESS = "video_download_success"
 const VIDEO_DOWNLOAD_FAIL    = "video_download_fail"
 const ROOT_FOLDER_NOT_FOUND  = "root_folder_not_found"
+const FFMPEG_NOT_FOUND       = "ffmpeg_not_found"
+const YTDLP_NOT_FOUND        = "ytdlp_not_found"
 
 type WebSocketMessage = {
   type: string 
@@ -144,8 +148,10 @@ const App: React.FC = () => {
         } else if (message.type === ROOT_FOLDER_NOT_FOUND) {
           setIsConfigMissing(true);
           setModalState(ModalState.config);
-        } else {
-          console.log(message.type);
+        } else if (message.type === FFMPEG_NOT_FOUND) {
+          setModalState(ModalState.ffmpegNotFound)
+        } else if (message.type === YTDLP_NOT_FOUND) {
+          setModalState(ModalState.ytdlpNotFound)
         }
       }
     }
@@ -156,7 +162,11 @@ const App: React.FC = () => {
   return (
     <>
       <Modal
-        isLocked={isConfigMissing}
+        isLocked={
+          isConfigMissing ||
+          modalState === ModalState.ytdlpNotFound ||
+          modalState === ModalState.ffmpegNotFound
+        }
         onClose={closeModal}
         isOpen={modalState !== ModalState.none}
       >
@@ -184,13 +194,13 @@ const App: React.FC = () => {
         )}
         {modalState === ModalState.editVideo && selectedVideoEdit && (
           <EditVideoForm
-            allPlaylists={playlists.slice(1)} /* remove 'ALL' from playlists */ 
+            allPlaylists={playlists.slice(1)} /* remove 'ALL' from playlists */
             id={selectedVideoEdit.id}
             initialTitle={selectedVideoEdit.title}
             onSuccess={() => {
-              setLastUpdate(Date.now())
+              setLastUpdate(Date.now());
               setModalState(ModalState.none);
-              return Promise.resolve()
+              return Promise.resolve();
             }}
           />
         )}
@@ -204,6 +214,18 @@ const App: React.FC = () => {
               ).catch((e) => console.log(e));
             }}
           />
+        )}
+        {modalState === ModalState.ytdlpNotFound && (
+          <div>
+            <h1 className="text-xl text-red-500 font-bold">ydtlp not found!</h1>
+            <p> ytdlp must be available in your system's path </p>
+          </div>
+        )}
+        {modalState === ModalState.ffmpegNotFound && (
+          <div>
+            <h1 className="text-xl font-bold">ffmpeg not found!</h1>
+            <p> ffmpeg must be available in your system's path </p>
+          </div>
         )}
       </Modal>
       <div className="min-h-screen h-fit dark:bg-neutral-950 dark:text-neutral-100">
@@ -220,7 +242,10 @@ const App: React.FC = () => {
             onClickOpenNewPlaylistMenu={onClickNewPlaylist}
             playlists={playlists}
             selectedPlaylist={selectedPlaylist}
-            setSelectedPlaylist={(p: Playlist)=>{setSelectedPlaylist(p); setLastUpdate(Date.now())}}
+            setSelectedPlaylist={(p: Playlist) => {
+              setSelectedPlaylist(p);
+              setLastUpdate(Date.now());
+            }}
           />
         )}
         <main className={"pt-14" + (selectedVideo ? "" : " pl-60")}>

@@ -17,6 +17,8 @@ const (
 	VideoDownloadSuccess MessageType = "video_download_success"
 	VideoDownloadFail    MessageType = "video_download_fail"
 	RootFolderNotFound   MessageType = "root_folder_not_found"
+	FfmpegNotFound       MessageType = "ffmpeg_not_found"
+	YtdlpNotFound        MessageType = "ytdlp_not_found"
 )
 
 type Client struct {
