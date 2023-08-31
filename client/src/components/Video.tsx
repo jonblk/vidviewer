@@ -32,7 +32,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId, setSelectedVideo }) 
     }
   };
 
-  const videoUrl = `http://localhost:8000/videos/${videoId}`
+  const videoUrl = `https://localhost:8000/videos/${videoId}`
 
   // Load/Save {volume, muted} from/to localstorage
   useEffect(()=> {

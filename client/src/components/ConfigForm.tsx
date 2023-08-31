@@ -18,7 +18,7 @@ const ConfigForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
   useEffect(() => {
     const get = async () => {
       try {
-        const response = await fetch("http://localhost:8000/config", {method: "GET"})
+        const response = await fetch("https://localhost:8000/config", {method: "GET"})
         const json = await response.json() as Config
         console.log(json)
         setRootFolderPath(json.folder_path)
@@ -32,7 +32,7 @@ const ConfigForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      const response = await fetch(`http://localhost:8000/config`, {
+      const response = await fetch(`https://localhost:8000/config`, {
         headers: {
           "Content-Type": "application/json",
         },

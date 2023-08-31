@@ -14,7 +14,7 @@ const NewPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
 
   const handleSubmit =  (event: React.FormEvent)  => {
     event.preventDefault();
-     fetch("http://localhost:8000/playlists", {
+     fetch("https://localhost:8000/playlists", {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded", // or "multipart/form-data"
         },

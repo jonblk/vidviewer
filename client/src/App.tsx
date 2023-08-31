@@ -10,7 +10,6 @@ import NewPlaylistForm from './components/NewPlaylistForm';
 import EditVideoForm from './components/EditVideoForm';
 import { formatSeconds } from './util';
 import { useDarkMode } from './hooks/useDarkMode';
-//import DownloadStatus from './components/DownloadStatus';
 import { useWebSocket } from 'react-use-websocket/dist/lib/use-websocket';
 import { useEvent } from './hooks/useEvent';
 import ConfigForm from './components/ConfigForm';
@@ -78,12 +77,12 @@ const App: React.FC = () => {
 
   // Establish websocket connection
   const { lastMessage, readyState } = useWebSocket(
-    "ws://localhost:8000/websocket"
+    "wss://localhost:8000/websocket"
   );
 
   const fetchPlaylists = async (callback?: () => void) => {
     try {
-      const response = await fetch("http://localhost:8000/playlists");
+      const response = await fetch("https://localhost:8000/playlists");
       const data = (await response.json()) as Playlist[];
 
       setPlaylists(data);
@@ -156,8 +155,6 @@ const App: React.FC = () => {
       }
     }
   }, [readyState, lastMessage, onVideoDownloadSuccess]);
-
-
 
   return (
     <>

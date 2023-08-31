@@ -6,7 +6,7 @@ import { playlistData, videoData} from "./fixtures.ts"
 global.fetch = vi.fn();
 
 const fetch = global.fetch;
-const getAllPlaylistsUrl = "http://localhost:8000/playlists";
+const getAllPlaylistsUrl = "https://localhost:8000/playlists";
 
 // stubbed test data
 const playlists = playlistData;
@@ -67,7 +67,7 @@ describe("create new playlist", () => {
 
     expect(fetchSpy).toHaveBeenNthCalledWith(
       2,
-      "http://localhost:8000/playlists",
+      "https://localhost:8000/playlists",
       {
         body: "{\"name\":\"Sailing\"}",
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
@@ -171,7 +171,7 @@ describe("user clicks edit playlist", () => {
 
 describe("user clicks delete playlist", () => {
   let fetchSpy;
-  const path = `http://localhost:8000/playlists/${playlist.id}`;
+  const path = `https://localhost:8000/playlists/${playlist.id}`;
 
   beforeEach(async () => {
     fetchSpy = vi.spyOn(global, "fetch");
@@ -231,7 +231,7 @@ describe("user clicks delete playlist", () => {
 
 describe("update playlist", () => {
   let fetchSpy;
-  const path = `http://localhost:8000/playlists/${playlist.id}`;
+  const path = `https://localhost:8000/playlists/${playlist.id}`;
   const new_name = "Nature"
   const updated_playlists = playlists.map(p => {
     if(p.id === playlist.id) {
@@ -326,7 +326,7 @@ describe("update playlist", () => {
 
 describe("user selects playlist", () => {
   let fetchSpy; 
-  const path = `http://localhost:8000/playlist_videos/${playlist.id}?page=1&limit=25`
+  const path = `https://localhost:8000/playlist_videos/${playlist.id}?page=1&limit=25`
 
   beforeEach(async () => {
     fetchSpy = vi.spyOn(global, "fetch");

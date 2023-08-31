@@ -81,7 +81,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ playlists, onSuccess }) => 
 
       setIsLoading(true);
 
-      fetch("http://localhost:8000/videos", requestOptions)
+      fetch("https://localhost:8000/videos", requestOptions)
         .then((response) => {
           if (response.status === 200) {
             setIsLoading(false);

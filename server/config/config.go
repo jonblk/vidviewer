@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"gopkg.in/yaml.v2"
@@ -19,6 +20,40 @@ type Config struct {
 func getRootPath() string {
 	path, _ := os.UserConfigDir()
 	return filepath.Join(path, "vidviewer")
+}
+
+func GetSSLCertPath() string {
+	return filepath.Join(getRootPath(), "localhost.pem")
+}
+
+func GetSSlKeyPath() string {
+	return filepath.Join(getRootPath(), "localhost-key.pem")
+}
+
+func InitializeSSLCert() error {
+    var path = getRootPath()
+	// Check if the mkcert command is available in the system's PATH
+	_, err := exec.LookPath("mkcert")
+
+	if err != nil {
+		return err
+	}
+
+	// Check if the certificate files already exist in the config directory
+	_, certExists := os.Stat(path + "/localhost.pem")
+	_, keyExists := os.Stat(path + "/localhost-key.pem")
+
+	if os.IsNotExist(certExists) || os.IsNotExist(keyExists) {
+		// Run the mkcert command to generate the certificate files
+		cmd := exec.Command("mkcert", "localhost")
+		cmd.Dir = path
+		err := cmd.Run()
+		if err != nil {
+		  return err
+		}
+	}
+
+	return nil
 }
 
 func getConfigFilePath() string {

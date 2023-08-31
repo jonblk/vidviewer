@@ -22,7 +22,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
 
     try {
       const response = await fetch(
-        `http://localhost:8000/playlist_videos/${id}?page=${page}&limit=${limit}`
+        `https://localhost:8000/playlist_videos/${id}?page=${page}&limit=${limit}`
       );
       const data = (await response.json()) as Video[];
       setData(d=> [...d,...data]);

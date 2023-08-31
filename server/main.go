@@ -25,7 +25,14 @@ var (
 var devBuildEnabled bool
 
 func main() {
-	log.Println("Config file location is: " + config.Path())
+	// Initialize SSL Ceritification
+	error := config.InitializeSSLCert()
+	
+	if (error != nil) {
+		log.Fatal("Error initializing ssl certification:", error.Error())
+	}
+
+	log.Println("Config location is: " + config.Path())
 
 	// Initialize routes
 	r := routes.Initialize(assets, htmlFiles)
@@ -65,5 +72,5 @@ func main() {
 		}
 	}	
 
-	log.Fatal(srv.ListenAndServe())
+	log.Fatal(srv.ListenAndServeTLS(config.GetSSLCertPath(), config.GetSSlKeyPath()))
 }

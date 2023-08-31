@@ -19,7 +19,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
     }
     event.preventDefault();
     try {
-      await fetch(`http://localhost:8000/playlists/${id}`, {
+      await fetch(`https://localhost:8000/playlists/${id}`, {
         headers: {
           "Content-Type": "application/json", // or "multipart/form-data"
         },
@@ -38,7 +38,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
     }
     event.preventDefault();
     try {
-      const f =  await fetch(`http://localhost:8000/playlists/${id}`, {
+      const f =  await fetch(`https://localhost:8000/playlists/${id}`, {
         method: "DELETE", 
       })
       console.log(f.ok)
