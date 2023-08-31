@@ -1,17 +1,20 @@
 # vidviewer 
  
-Vidviewer is a simple way to download, organize, and watch your [yt-dlp](https://github.com/yt-dlp/yt-dlp) videos.  Run locally from a go binary.  
+Vidviewer is a simple way to download, organize, and watch your [yt-dlp](https://github.com/yt-dlp/yt-dlp) videos.  
+
+Run locally from a go binary.  
 
 ![vidviewer2](https://github.com/jonblk/vidviewer/assets/132053602/6e885be6-a820-4c28-a7b2-6fcbcf447bec)
 
-# Features
+## Features
 
 - Dark/light mode
 - Video resolution options
 - Playlists
 
 ## Requirements
-- Web browser
+
+The following should be preinstalled:
 - [mkcert](https://github.com/FiloSottile/mkcert) 
 - ffmpeg 
 - yt-dlp 
@@ -49,10 +52,7 @@ The rootFolder also contains the sqlite database and a temp folder for in-progre
 - file format options? (currently it defaults to mp4) 
 - export videos 
 - <s>SSL</s>
-- <s>infinite scroll to videos </s>
-- <s>'All videos' view option</s>
+- <s>infinite scroll </s>
+- <s>'all videos' view option</s>
 - <s>video resolution options</s>
-- <s>playlists checkbox list in editVideoForm</s>
-- <s>settings menu (update data folder path, videos per page)</s>
-- <s>error messages if ffmpeg, and yt-dlp not found on system</s>
-- <s>websocket and update client when video processing complete</s>
+- <s>error messages if ffmpeg and yt-dlp not found on system</s>
