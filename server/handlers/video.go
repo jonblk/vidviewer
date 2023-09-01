@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"crypto/md5"
 	"crypto/rand"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/big"
 	"net/http"
@@ -30,6 +32,21 @@ type VideoUpdate struct {
 	Playlists []VideoPlaylist `json:"videoPlaylists"`
 }
 
+func computeChecksum(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
 func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 	db := r.Context().Value(middleware.DBKey).(*sql.DB)
 
@@ -50,7 +67,7 @@ func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update video playlists
+	// Iterate over the video data
 	UpdateVideoPlaylists(db, id, videoUpdate.Playlists)
 
 	// Prepare the SQL update statement
@@ -193,7 +210,7 @@ func GetVideo(w http.ResponseWriter, r *http.Request) {
 
 	video := models.Video{}
 
-	err = db.QueryRow("SELECT * FROM videos WHERE id = ?", videoID).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate)
+	err = db.QueryRow("SELECT * FROM videos WHERE id = ?", videoID).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
 
 	if err != nil {
 		log.Println(err.Error())
@@ -226,7 +243,6 @@ func GetVideo(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetVideoFormats(w http.ResponseWriter, r *http.Request) {
-
 	// Get the value of the "url" parameter from the URL query string
 	urlParam := r.URL.Query().Get("url")
 
@@ -252,6 +268,7 @@ func GetVideoFormats(w http.ResponseWriter, r *http.Request) {
 }
 
 //TODO - clean up this function
+// Downloads video from yt-dlp
 func CreateVideo(w http.ResponseWriter, r *http.Request) {
 	// Context
 	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath
@@ -379,7 +396,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update video in db
-		updateVideoOnDownloadSuccess(db)
+		updateVideoOnDownloadSuccess(db, downloadVideoPathWithExt)
 
 		log.Println("youtube id is :" + ytID)
        
@@ -431,9 +448,9 @@ func extractThumbnail(videoPath, outputPath string) error {
 	return nil
 }
 
-func updateVideoOnDownloadSuccess(db *sql.DB) {
+func updateVideoOnDownloadSuccess(db *sql.DB, filepath string) {
     // Prepare the SQL statement for inserting a row
-	stmt, err := db.Prepare("INSERT INTO videos (download_complete, download_date) VALUES (?, ?)")
+	stmt, err := db.Prepare("INSERT INTO videos (download_complete, download_date, md5_checksum) VALUES (?, ?, ?)")
 
 	if err != nil {
 		log.Println(err)
@@ -441,9 +458,14 @@ func updateVideoOnDownloadSuccess(db *sql.DB) {
 
 	currentTime := time.Now()
 	formattedTime := currentTime.Format("2006-01-02 15:04:05")
+	md5Checksum, checksumErr := computeChecksum(filepath)
+
+	if (checksumErr != nil) {
+		log.Println("Error generating video file checksum") 
+	}
 
 	// Execute the SQL statement with the values for the row
-	_, _ = stmt.Exec(true, formattedTime)
+	_, _ = stmt.Exec(true, formattedTime, md5Checksum)
 }
 
 func checkFileIDExists(fileID string, db *sql.DB) (bool, error) {

@@ -35,7 +35,7 @@ func GetImage(w http.ResponseWriter, r *http.Request) {
 
 	video := models.Video{}
 
-	err = db.QueryRow("SELECT * FROM videos WHERE id = ?", videoID).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate)
+	err = db.QueryRow("SELECT * FROM videos WHERE id = ?", videoID).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
 
 	if err != nil {
 		http.Error(w, "Video not found", http.StatusNotFound)

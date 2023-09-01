@@ -135,7 +135,7 @@ func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
 		FileFormat       string `json:"file_format"`
 		Title            string `json:"title"`
 		DownloadComplete bool   `json:"download_complete"`
-		Duration         string    `json:"duration"`
+		Duration         string `json:"duration"`
 		DownloadDate     string `json:"download_date"`
 		FilePath         string `json:"file_path"`
 		ThumbnailPath    string `json:"thumnail_path"`
@@ -147,7 +147,7 @@ func GetPlaylistVideos(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 	    videoItem := VideoItem{}
 		var video models.Video
-		 err := rows.Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate)
+		 err := rows.Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
 		if err != nil {
 			log.Fatal(err)
 		}

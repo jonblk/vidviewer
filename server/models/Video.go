@@ -1,5 +1,9 @@
 package models
 
+import (
+	"database/sql"
+)
+
 type Video struct {
 	YtID             string `json:"yt_id"`
 	ID               int    `json:"id"`
@@ -10,4 +14,5 @@ type Video struct {
 	DownloadComplete bool   `json:"download_complete"`
 	Duration         string `json:"duration"`
 	DownloadDate     string `json:"download_date"`
+	Md5Checksum      sql.NullString `json:"md5_checksum"`
 }
