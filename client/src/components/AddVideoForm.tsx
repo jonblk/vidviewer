@@ -38,7 +38,7 @@ const AddVideoForm: React.FC<AddVideoFormProps> = ({ playlists, onSuccess }) => 
   const fetchVideoFormats = async (url: string) => {
     try {
       setIsFetchingVideoFormats(true)
-      const r = await fetch(`http://localhost:8000/video_formats?url=${encodeURIComponent(url)}`);
+      const r = await fetch(`https://localhost:8000/video_formats?url=${encodeURIComponent(url)}`);
       let v: VideoFormat[] = await r.json() as VideoFormat[];
       v.reverse()
 

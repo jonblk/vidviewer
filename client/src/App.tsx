@@ -226,13 +226,14 @@ const App: React.FC = () => {
         )}
       </Modal>
       <div className="min-h-screen h-fit dark:bg-neutral-950 dark:text-neutral-100">
+        <div className={selectedVideo ? "dark" : ""}>
         <Navbar
           isVideoMode={!!selectedVideo}
           toggleTheme={toggleDarkMode}
           isDarkMode={darkMode}
           openAddVideoMenu={onClickAddVideo}
           openConfigMenu={() => setModalState(ModalState.config)}
-        />
+        /></div>
         {!selectedVideo && (
           <LeftMenu
             onClickOpenEditPlaylistMenu={onClickEditPlaylist}

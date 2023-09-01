@@ -1,6 +1,6 @@
 import React from 'react';
 import {  FiEdit3 } from 'react-icons/fi';
-import { IoIosAdd } from 'react-icons/io';
+import { IoIosAdd, IoIosAnalytics, IoIosSettings } from 'react-icons/io';
 import { Playlist } from '../App';
 
 interface LeftMenuProps {
