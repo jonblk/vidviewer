@@ -14,7 +14,7 @@ func (repo *PlaylistVideoRepository) GetDB() *sql.DB {
   return *repo.db
 }
 
-func (repo *PlaylistVideoRepository) Get(playlist_id int64, video_id int64) (int64, error) {
+func (repo *PlaylistVideoRepository) Get(playlist_id string, video_id string) (int64, error) {
   // Check if the row exists before trying to delete it
 	row := repo.GetDB().QueryRow("SELECT id FROM playlist_videos WHERE playlist_id = ? AND video_id = ?", playlist_id, video_id)
 	var id int64
@@ -22,7 +22,7 @@ func (repo *PlaylistVideoRepository) Get(playlist_id int64, video_id int64) (int
 	return id, err
 }
 
-func (repo *PlaylistVideoRepository) Create(playlist_id int64, video_id int64) (int64, error) {
+func (repo *PlaylistVideoRepository) Create(playlist_id string, video_id string) (int64, error) {
   query := "INSERT INTO playlist_videos (playlist_id, video_id) VALUES (?, ?)"
 
   result, err := repo.GetDB().Exec(query, playlist_id, video_id)
@@ -40,14 +40,14 @@ func (repo *PlaylistVideoRepository) Create(playlist_id int64, video_id int64) (
 	return id, nil
 }
 
-func (repo *PlaylistVideoRepository) Delete(playlist_id int64, video_id int64) error {
+func (repo *PlaylistVideoRepository) Delete(playlist_id string, video_id string) error {
 	var stmt *sql.Stmt
 	var err error
 
-	if (playlist_id > 0) {
-	  stmt, err = repo.GetDB().Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
-	} else {
+	if (playlist_id == "") {
 	  stmt, err = repo.GetDB().Prepare("DELETE FROM playlist_videos WHERE video_id = ?")
+	} else {
+	  stmt, err = repo.GetDB().Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
 	}
 
 	if err != nil {
@@ -56,10 +56,10 @@ func (repo *PlaylistVideoRepository) Delete(playlist_id int64, video_id int64) e
 
 	defer stmt.Close()
 
-	if (playlist_id > 0) {
-	  _, err = stmt.Exec(playlist_id)
-	} else {
+	if (playlist_id == "") {
 	  _, err = stmt.Exec(video_id)
+	} else {
+	  _, err = stmt.Exec(playlist_id)
 	}
 
 	if err != nil {

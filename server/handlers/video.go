@@ -54,7 +54,7 @@ func GetVideosFromPlaylist(w http.ResponseWriter, r *http.Request) {
 	repo := getVideoRepository(r)
 
 	vars := mux.Vars(r)
-	playlistIDStr := vars["id"]
+	playlistID := vars["id"]
 
 	queryParams := r.URL.Query()
 
@@ -69,15 +69,6 @@ func GetVideosFromPlaylist(w http.ResponseWriter, r *http.Request) {
 
 	page, _ := strconv.ParseUint(pageStr, 10, 0)
 	limit, _ := strconv.ParseUint(limitStr, 10, 0)
-
-	// Convert the playlist ID to an integer
-	playlistID, err := strconv.ParseInt(playlistIDStr,10,64)
-
-	if err != nil {
-		log.Println("Invalid playlist ID")
-		http.Error(w, "Invalid playlist ID", http.StatusBadRequest)
-		return
-	}
 
 	videos, err := repo.GetFromPlaylist(playlistID, uint(limit), uint(page))
 
@@ -103,17 +94,13 @@ func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 
 	// Retrieve the ID parameter from the request URL
 	vars := mux.Vars(r)
-	idParam := vars["id"]
-	id, err := strconv.ParseInt(idParam, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
-		return
-	}
+	id := vars["id"]
 
 	// Parse the JSON request body
 	var videoUpdate VideoUpdate
-	err = json.NewDecoder(r.Body).Decode(&videoUpdate)
+	err := json.NewDecoder(r.Body).Decode(&videoUpdate)
 	if err != nil {
+		log.Println("Failed to parse JSON BODY")
 		http.Error(w, "Failed to parse JSON body", http.StatusBadRequest)
 		return
 	}
@@ -122,6 +109,7 @@ func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 	video, err := videoRepo.Get(id) 
 
 	if (err != nil) {
+		log.Println("Failed to get video from db")
 		http.Error(w, "Unable to get video", http.StatusBadRequest)
 	}
 
@@ -150,8 +138,7 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 
 	// Get the video ID from the request URL parameters
 	vars := mux.Vars(r)
-	idParam := vars["id"]
-	id, _ := strconv.ParseInt(idParam, 10, 64)
+	id := vars["id"]
 
 	// get the file_id and file_format  
 	// to use for deleting folders and files
@@ -172,7 +159,7 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete playlist_videos that have the video id 
-	err = playlistVideoRepo.Delete(-1, id)
+	err = playlistVideoRepo.Delete("", id)
 
     if err != nil {
 		// Return a 500 Internal Server Error response
@@ -209,15 +196,7 @@ func GetVideo(w http.ResponseWriter, r *http.Request) {
 
 	// Get the video ID from the URL path
 	vars := mux.Vars(r)
-	videoIDStr := vars["id"]
-
-	// Convert the video ID to an integer
-	videoID, err := strconv.ParseInt(videoIDStr, 10, 64)
-
-	if err != nil {
-		http.Error(w, "Invalid video ID", http.StatusBadRequest)
-		return
-	}
+	videoID := vars["id"]
 
 	video, err := videoRepo.Get(videoID)
 
@@ -362,15 +341,8 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-    
-	playlistId, err := strconv.ParseInt(playlistID, 10, 64)
-
-	if err != nil {
-		log.Println("Bad playlist id, error parsing to integer", playlistID)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
 	
-	id, err := playlistVideoRepository.Create(playlistId, videoID)
+	id, err := playlistVideoRepository.Create(playlistID, string(videoID))
 
 	if err != nil {
 		log.Println("Error inserting into playlistVideo table", id)

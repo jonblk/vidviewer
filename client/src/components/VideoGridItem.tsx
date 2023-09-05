@@ -29,7 +29,7 @@ const GridItem: React.FC<GridItemProps> = ({
       >
         <div className="w-full relative aspect-video bg-black overflow-hidden rounded-lg">
           <img
-            src={`https://localhost:8000/images/${video.id}`}
+            src={`https://localhost:8000/images/${video.file_id}`}
             alt={title}
             className="w-full rounded-lg object-center object-cover h-full"
           />

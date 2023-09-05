@@ -17,7 +17,7 @@ func (repo *VideoRepository) GetDB() *sql.DB {
   return *repo.db
 }
 
-const ALL_PLAYLIST_ID int64 = 0
+const ALL_PLAYLIST_ID string = "0"
 
 // Get the video
 func (repo *VideoRepository) GetBy(value string, by string) (models.Video, error) {
@@ -38,7 +38,7 @@ func (repo *VideoRepository) GetBy(value string, by string) (models.Video, error
 }
 
 // Get the video
-func (repo *VideoRepository) Get(id int64) (models.Video, error) {
+func (repo *VideoRepository) Get(id string) (models.Video, error) {
 	video := models.Video{}
 
 	err := repo.GetDB().QueryRow("SELECT * FROM videos WHERE id = ?", id).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
@@ -122,7 +122,7 @@ func (repo *VideoRepository) Create(video models.Video) (int64, error) {
 }
 
 // Delete video from videos table
-func (repo *VideoRepository) Delete(id int64) error {
+func (repo *VideoRepository) Delete(id string) error {
 	stmt, err := repo.GetDB().Prepare("DELETE FROM videos WHERE id = ?")
 
 	if err != nil {
@@ -141,7 +141,7 @@ func (repo *VideoRepository) Delete(id int64) error {
 }
 
 // Returns all videos according to: playlist, limit, and page number
-func (repo *VideoRepository) GetFromPlaylist(playlistID int64, limit uint, page uint) ([]models.Video, error) {
+func (repo *VideoRepository) GetFromPlaylist(playlistID string, limit uint, page uint) ([]models.Video, error) {
     var query string
 	var rows *sql.Rows
 	var err error

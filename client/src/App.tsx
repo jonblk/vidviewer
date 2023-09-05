@@ -22,6 +22,7 @@ export interface Playlist {
 export interface Video {
   id: number;
   file_path: string;
+  file_id:  string;
   thumbnail_path: string;
   title: string;
   duration: string;

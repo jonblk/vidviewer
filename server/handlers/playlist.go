@@ -24,24 +24,25 @@ func getPlaylistVideoRepo(r *http.Request) repository.PlaylistVideoRepository{
 }
 
 type VideoPlaylist struct {
-	ID      int64    `json:"id"`
+	ID      int    `json:"id"`
 	Checked bool   `json:"checked"`
 	Name    string `json:"name"`
 }
 
-func UpdateVideoPlaylists(repo repository.PlaylistVideoRepository, videoID int64, playlists []VideoPlaylist) {
+func UpdateVideoPlaylists(repo repository.PlaylistVideoRepository, videoID string, playlists []VideoPlaylist) {
     for _, playlist := range playlists {
-		_, err := repo.Get(playlist.ID, videoID)
+		id := fmt.Sprint(playlist.ID)
+		_, err := repo.Get(id, videoID)
 
 		if !playlist.Checked {
 			// Delete if it exists
-			if err == nil {
-				repo.Delete(playlist.ID, videoID)
+			if (err == nil) {
+				repo.Delete(id, videoID)
 			}
 		} else {
 			//  Create if it doesn't exist
-			if err != nil {
-				repo.Create(playlist.ID, videoID)
+			if (err != nil) {
+				repo.Create(id, videoID)
 			}
 		}
 	}
@@ -144,14 +145,9 @@ func DeletePlaylist(w http.ResponseWriter, r *http.Request) {
 	playlistVideoRepo := getPlaylistVideoRepo(r)
 
 	// Get the playlist ID from the request URL parameters
-	idstr := mux.Vars(r)["id"]
-	id, err := strconv.ParseInt(idstr, 10, 64)
+	id := mux.Vars(r)["id"]
 
-	if err != nil {
-		http.Error(w, "Invalid playlist id", http.StatusBadRequest)
-	}
-
-	err = playlistVideoRepo.Delete(id, -1)
+	err := playlistVideoRepo.Delete(id, "")
 
 	if err != nil {
 		http.Error(w, "Failed to delete playlistvideos", http.StatusInternalServerError)
@@ -180,15 +176,7 @@ func GetVideoPlaylists(w http.ResponseWriter, r *http.Request) {
 	repo := getPlaylistRepo(r)
 	// Get the playlist ID from the URL path
 	vars := mux.Vars(r)
-	playlistIDStr := vars["id"]
-
-	// Convert the playlist ID to an integer
-	videoID, err := strconv.ParseInt(playlistIDStr, 10, 64)
-	if err != nil {
-		log.Println("Invalid video ID")
-		http.Error(w, "Invalid video ID", http.StatusBadRequest)
-		return
-	}
+	videoID := vars["id"]
 
 	playlists, err := repo.GetAllFromVideo(videoID)
 	if err != nil {
@@ -199,6 +187,7 @@ func GetVideoPlaylists(w http.ResponseWriter, r *http.Request) {
 
 	// Convert the videos slice to JSON
 	jsonData, err := json.Marshal(playlists)
+
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Error converting video's playlists to json", http.StatusInternalServerError)

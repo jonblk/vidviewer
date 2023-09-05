@@ -32,7 +32,7 @@ func (repo *PlaylistRepository) Update(id int64, name string) error {
 	return err
 }
 
-func (repo *PlaylistRepository) GetAllFromVideo(videoID int64) ([]models.Playlist, error) {
+func (repo *PlaylistRepository) GetAllFromVideo(videoID string) ([]models.Playlist, error) {
   query := `
 	SELECT p.*
 	FROM playlists AS p
@@ -90,7 +90,7 @@ func (repo *PlaylistRepository) Create(name string, date string) (error) {
 	return err
 }
 
-func (repo *PlaylistRepository) Delete(id int64) error {
+func (repo *PlaylistRepository) Delete(id string) error {
     // Prepare the DELETE statement
 	stmt, err := repo.GetDB().Prepare("DELETE FROM playlists WHERE id = ?")
 
