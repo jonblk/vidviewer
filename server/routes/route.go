@@ -96,7 +96,7 @@ func Initialize(assets embed.FS, htmlFiles embed.FS, repositories *repository.Re
 	Router.HandleFunc("/assets/{file}.{ext}", serveAssets).Methods("GET")
 
     // Return thumbnail pictures
-	Router.HandleFunc("/images/{video_id}", handlers.GetImage).Methods("GET")
+	Router.HandleFunc("/images/{file_id}", handlers.GetImage).Methods("GET")
 
 	// Create a websocket connection 
 	Router.HandleFunc("/websocket", handlers.HandleWebSocket)

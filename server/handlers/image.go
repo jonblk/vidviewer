@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"os"
-	"strconv"
 	"vidviewer/config"
 	"vidviewer/files"
 	"vidviewer/middleware"
@@ -24,16 +23,9 @@ func GetImage(w http.ResponseWriter, r *http.Request) {
 	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath  // Type assert to your config type
 
 	vars := mux.Vars(r)
-	videoIDStr := vars["video_id"]
+	fileID := vars["file_id"]
 
-	// Convert the video ID to an integer
-	videoID, err := strconv.ParseInt(videoIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid video ID", http.StatusBadRequest)
-		return
-	}
-
-	video, err := repo.Get(videoID)
+	video, err := repo.GetBy(fileID, "file_id")
 
 	if err != nil {
 		http.Error(w, "Video not found", http.StatusNotFound)

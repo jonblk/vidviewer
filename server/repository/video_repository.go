@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"vidviewer/models"
 
@@ -17,6 +18,24 @@ func (repo *VideoRepository) GetDB() *sql.DB {
 }
 
 const ALL_PLAYLIST_ID int64 = 0
+
+// Get the video
+func (repo *VideoRepository) GetBy(value string, by string) (models.Video, error) {
+	video := models.Video{}
+    query := fmt.Sprintf("SELECT * FROM videos WHERE %s = ?", by)
+
+	log.Println(query)
+	log.Println(value)
+
+	err := repo.GetDB().QueryRow(query, value).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
+
+	if err != nil {
+		log.Println(err.Error())
+		return video, err
+	}
+
+	return video, nil
+}
 
 // Get the video
 func (repo *VideoRepository) Get(id int64) (models.Video, error) {
@@ -170,6 +189,7 @@ func (repo *VideoRepository) GetFromPlaylist(playlistID int64, limit uint, page 
 		videoItem.ID = video.ID
 		videoItem.Title = video.Title
 		videoItem.Duration = video.Duration
+		videoItem.FileID = video.FileID
 		videoItem.Url = video.Url
 		videos = append(videos, videoItem)
 	}
