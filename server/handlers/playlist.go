@@ -9,47 +9,50 @@ import (
 	"strconv"
 	"time"
 	"vidviewer/middleware"
-	"vidviewer/models"
+	"vidviewer/repository"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var allPlaylist = models.Playlist {ID: 0, Name: "All", Date: "" }
+func getPlaylistRepo(r *http.Request) repository.PlaylistRepository{
+	return r.Context().Value(middleware.RepositoryKey).(*repository.Repositories).PlaylistRepo
+}
 
-func UpdateRootFolderPath(w http.ResponseWriter, r *http.Request) {
-	log.Println("yo sup dawg")
+func getPlaylistVideoRepo(r *http.Request) repository.PlaylistVideoRepository{
+	return r.Context().Value(middleware.RepositoryKey).(*repository.Repositories).PlaylistVideoRepo
+}
+
+type VideoPlaylist struct {
+	ID      int64    `json:"id"`
+	Checked bool   `json:"checked"`
+	Name    string `json:"name"`
+}
+
+func UpdateVideoPlaylists(repo repository.PlaylistVideoRepository, videoID int64, playlists []VideoPlaylist) {
+    for _, playlist := range playlists {
+		_, err := repo.Get(playlist.ID, videoID)
+
+		if !playlist.Checked {
+			// Delete if it exists
+			if err == nil {
+				repo.Delete(playlist.ID, videoID)
+			}
+		} else {
+			//  Create if it doesn't exist
+			if err != nil {
+				repo.Create(playlist.ID, videoID)
+			}
+		}
+	}
 }
 
 func GetAllPlaylists(w http.ResponseWriter, r *http.Request) {
-	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+	repo := getPlaylistRepo(r)
 
-	// Query all playlists from the database
-	rows, err := db.Query("SELECT * FROM playlists")
+	playlists, err := repo.Index()
+
 	if err != nil {
-		http.Error(w, "Failed to fetch playlists", http.StatusInternalServerError)
-		return
-	}
-
-	defer rows.Close()
-
-	// Create a slice to store the playlists
-	playlists := []models.Playlist{allPlaylist}
-
-	// Iterate over the rows and scan each playlist into a struct
-	for rows.Next() {
-		var playlist models.Playlist
-		err := rows.Scan(&playlist.ID, &playlist.Name, &playlist.Date)
-		if err != nil {
-			log.Println(err.Error())
-			http.Error(w, "Failed to fetch playlists", http.StatusInternalServerError)
-			return
-		}
-		playlists = append(playlists, playlist)
-	}
-
-	// Check for any errors during iteration
-	if err := rows.Err(); err != nil {
 		log.Println(err.Error())
 		http.Error(w, "Failed to fetch playlists", http.StatusInternalServerError)
 		return
@@ -75,12 +78,12 @@ type PlaylistUpdate struct {
 }
 
 func UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
-	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+	repo := getPlaylistRepo(r)
 
 	// Retrieve the ID parameter from the request URL
 	vars := mux.Vars(r)
 	idParam := vars["id"]
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
@@ -94,16 +97,7 @@ func UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepare the SQL update statement
-	stmt, err := db.Prepare("UPDATE playlists SET name = ? WHERE id = ?")
-	if err != nil {
-		http.Error(w, "Failed to prepare update statement", http.StatusInternalServerError)
-		return
-	}
-	defer stmt.Close()
-
-	// Execute the update statement with the retrieved values
-	_, err = stmt.Exec(playlistUpdate.Name, id)
+	err = repo.Update(id, playlistUpdate.Name)
 	if err != nil {
 		http.Error(w, "Failed to update playlist", http.StatusInternalServerError)
 		return
@@ -118,18 +112,11 @@ type FormData struct {
 }
 
 func CreatePlaylist(w http.ResponseWriter, r *http.Request) {
-	db := r.Context().Value(middleware.DBKey).(*sql.DB)
-
-	// Prepare the SQL statement for inserting a row
-	stmt, err := db.Prepare("INSERT INTO playlists (name, date) VALUES (?, ?)")
-
-	if err != nil {
-		log.Println(err)
-	}
+	repo := getPlaylistRepo(r)
 
 	var formData FormData
 
-	err = json.NewDecoder(r.Body).Decode(&formData)
+	err := json.NewDecoder(r.Body).Decode(&formData)
 	if err != nil {
 		// Handle the error
 		log.Println(err.Error())
@@ -138,12 +125,10 @@ func CreatePlaylist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := formData.Name
-
 	currentTime := time.Now()
 	formattedTime := currentTime.Format("2006-01-02 15:04:05")
 
-	// Execute the SQL statement with the values for the row
-	_, err = stmt.Exec(name, formattedTime)
+	err = repo.Create(name, formattedTime)
 
 	if err != nil {
 		log.Println(err.Error())
@@ -155,28 +140,25 @@ func CreatePlaylist(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeletePlaylist(w http.ResponseWriter, r *http.Request) {
-	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+	playlistRepo := getPlaylistRepo(r)
+	playlistVideoRepo := getPlaylistVideoRepo(r)
 
 	// Get the playlist ID from the request URL parameters
-	vars := mux.Vars(r)
-	id := vars["id"]
-
-	// Delete playlist_videos 
-	stmt, err := db.Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
+	idstr := mux.Vars(r)["id"]
+	id, err := strconv.ParseInt(idstr, 10, 64)
 
 	if err != nil {
-		http.Error(w, "Failed to delete playlist videos", http.StatusInternalServerError)
+		http.Error(w, "Invalid playlist id", http.StatusBadRequest)
 	}
 
-	defer stmt.Close()
+	err = playlistVideoRepo.Delete(id, -1)
 
-	_, err = stmt.Exec(id)
 	if err != nil {
-		http.Error(w, "Failed to delete playlist videos", http.StatusInternalServerError)
+		http.Error(w, "Failed to delete playlistvideos", http.StatusInternalServerError)
 	}
 
 	// Delete the playlist from the database based on the ID
-	err = deletePlaylistFromDB(id, db)
+	err = playlistRepo.Delete(id)
 
 	if err != nil {
 		// Check if the error is due to playlist not found
@@ -194,21 +176,36 @@ func DeletePlaylist(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func deletePlaylistFromDB(id string, db *sql.DB) error {
-	// Prepare the DELETE statement
-	stmt, err := db.Prepare("DELETE FROM playlists WHERE id = ?")
+func GetVideoPlaylists(w http.ResponseWriter, r *http.Request) {
+	repo := getPlaylistRepo(r)
+	// Get the playlist ID from the URL path
+	vars := mux.Vars(r)
+	playlistIDStr := vars["id"]
 
+	// Convert the playlist ID to an integer
+	videoID, err := strconv.ParseInt(playlistIDStr, 10, 64)
 	if err != nil {
-		return err
+		log.Println("Invalid video ID")
+		http.Error(w, "Invalid video ID", http.StatusBadRequest)
+		return
 	}
 
-	defer stmt.Close()
-
-	// Execute the DELETE statement with the ID parameter
-	_, err = stmt.Exec(id)
+	playlists, err := repo.GetAllFromVideo(videoID)
 	if err != nil {
-		return err
+		log.Println("Error getting videos playlists")
+		http.Error(w, "Error getting videos playlists", http.StatusInternalServerError)
+		return 
 	}
 
-	return nil
+	// Convert the videos slice to JSON
+	jsonData, err := json.Marshal(playlists)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Error converting video's playlists to json", http.StatusInternalServerError)
+		return 
+	}
+
+	// Set the response headers and write the JSON data to the response
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
 }

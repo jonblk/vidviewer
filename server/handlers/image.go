@@ -1,14 +1,14 @@
 package handlers
 
 import (
-	"database/sql"
 	"net/http"
 	"os"
 	"strconv"
 	"vidviewer/config"
 	"vidviewer/files"
 	"vidviewer/middleware"
-	"vidviewer/models"
+
+	"vidviewer/repository"
 
 	"github.com/gorilla/mux"
 
@@ -18,7 +18,7 @@ import (
 const image_format = "jpg"
 
 func GetImage(w http.ResponseWriter, r *http.Request) {
-	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+	repo := r.Context().Value(middleware.RepositoryKey).(*repository.Repositories).VideoRepo
 
     // Get config from context
 	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath  // Type assert to your config type
@@ -27,15 +27,13 @@ func GetImage(w http.ResponseWriter, r *http.Request) {
 	videoIDStr := vars["video_id"]
 
 	// Convert the video ID to an integer
-	videoID, err := strconv.Atoi(videoIDStr)
+	videoID, err := strconv.ParseInt(videoIDStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid video ID", http.StatusBadRequest)
 		return
 	}
 
-	video := models.Video{}
-
-	err = db.QueryRow("SELECT * FROM videos WHERE id = ?", videoID).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
+	video, err := repo.Get(videoID)
 
 	if err != nil {
 		http.Error(w, "Video not found", http.StatusNotFound)

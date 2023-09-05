@@ -9,6 +9,7 @@ import (
 	"time"
 	"vidviewer/handlers"
 	"vidviewer/middleware"
+	"vidviewer/repository"
 
 	"github.com/gorilla/mux"
 	_ "modernc.org/sqlite"
@@ -16,7 +17,7 @@ import (
 
 var Router *mux.Router
 
-func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
+func Initialize(assets embed.FS, htmlFiles embed.FS, repositories *repository.Repositories ) (r *mux.Router) {
 	// Serve HTML files
 	var serveHtml = func(w http.ResponseWriter, r *http.Request) {
 		requestedPath := r.URL.Path
@@ -86,6 +87,7 @@ func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
 	Router.Use(middleware.ConfigMiddleware)
 	Router.Use(middleware.FilesMiddleware)
 	Router.Use(middleware.DBMiddleware)
+	Router.Use(middleware.WithRepositories(repositories))
 
 	// Serve html files from build folder
 	Router.HandleFunc("/", serveHtml).Methods("GET")
@@ -116,7 +118,7 @@ func Initialize(assets embed.FS, htmlFiles embed.FS) (r *mux.Router) {
 	Router.HandleFunc("/videos/{id}", handlers.DeleteVideo).Methods("DELETE")
 	Router.HandleFunc("/video_formats", handlers.GetVideoFormats).Methods("GET")
 
-	Router.HandleFunc("/playlist_videos/{id}", handlers.GetPlaylistVideos).Methods("GET")
+	Router.HandleFunc("/playlist_videos/{id}", handlers.GetVideosFromPlaylist).Methods("GET")
 	Router.HandleFunc("/video_playlists/{id}", handlers.GetVideoPlaylists).Methods("GET")
 
 	return Router

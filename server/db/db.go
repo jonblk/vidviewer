@@ -16,16 +16,18 @@ import (
 
 var dbs map[string]*sql.DB
 
+var ActiveConnection *sql.DB
+
 func GetDB(path string) (*sql.DB, bool) {
   _, exists := dbs[path] 
 	return dbs[path], exists 
 }
 
-func Initialize(dbPath string) *sql.DB {
-	if dbs == nil {
-    dbs = make(map[string]*sql.DB)
-  }
+func GetActiveConnection() *sql.DB {
+  return ActiveConnection;
+}
 
+func UpdateActiveConnection(dbPath string) *sql.DB {
   var err error
 
 	if _, exists := dbs[dbPath]; !exists {
@@ -44,7 +46,16 @@ func Initialize(dbPath string) *sql.DB {
 		runMigrations(dbPath)
 	}
 
-	return dbs[dbPath]
+  // Update active connection
+  ActiveConnection = dbs[dbPath]
+
+  return ActiveConnection
+}
+
+func InitializeDB() {
+  if dbs == nil {
+    dbs = make(map[string]*sql.DB)
+  }
 }
 
 func runMigrations(dbPath string) {

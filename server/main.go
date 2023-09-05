@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 	"vidviewer/config"
+	"vidviewer/db"
+	"vidviewer/repository"
 	"vidviewer/routes"
 
 	"github.com/gorilla/handlers"
@@ -34,8 +36,13 @@ func main() {
 
 	log.Println("Config location is: " + config.Path())
 
+	// Initialize the array of database connection pools
+	db.InitializeDB()
+
+	repositories := repository.NewRepositories(&db.ActiveConnection)
+
 	// Initialize routes
-	r := routes.Initialize(assets, htmlFiles)
+	r := routes.Initialize(assets, htmlFiles, repositories)
 
     // Parse command-line flags
 	flag.BoolVar(&devBuildEnabled, "dev", false, "Enable dev build")

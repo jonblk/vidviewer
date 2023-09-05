@@ -20,6 +20,7 @@ import (
 	"vidviewer/files"
 	"vidviewer/middleware"
 	"vidviewer/models"
+	"vidviewer/repository"
 	ws "vidviewer/websocket"
 	"vidviewer/ytdlp"
 
@@ -47,13 +48,63 @@ func computeChecksum(filePath string) (string, error) {
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
+const ALL_PLAYLIST_ID = 0;
+
+func GetVideosFromPlaylist(w http.ResponseWriter, r *http.Request) {
+	repo := getVideoRepository(r)
+
+	vars := mux.Vars(r)
+	playlistIDStr := vars["id"]
+
+	queryParams := r.URL.Query()
+
+	pageStr := queryParams.Get("page")
+	if pageStr == "" {
+		pageStr = "1"
+	}
+	limitStr := queryParams.Get("limit")
+	if limitStr == "" {
+		limitStr = "10"
+	}
+
+	page, _ := strconv.ParseUint(pageStr, 10, 0)
+	limit, _ := strconv.ParseUint(limitStr, 10, 0)
+
+	// Convert the playlist ID to an integer
+	playlistID, err := strconv.ParseInt(playlistIDStr,10,64)
+
+	if err != nil {
+		log.Println("Invalid playlist ID")
+		http.Error(w, "Invalid playlist ID", http.StatusBadRequest)
+		return
+	}
+
+	videos, err := repo.GetFromPlaylist(playlistID, uint(limit), uint(page))
+
+	if (err != nil) {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	jsonData, err := json.Marshal(videos)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	// Set the response headers and write the JSON data to the response
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
+}
+
 func UpdateVideo(w http.ResponseWriter, r *http.Request) {
-	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+	videoRepo := getVideoRepository(r)
+	playlistVideoRepo := getPlaylistVideoRepository(r)
 
 	// Retrieve the ID parameter from the request URL
 	vars := mux.Vars(r)
 	idParam := vars["id"]
-	id, err := strconv.Atoi(idParam)
+	id, err := strconv.ParseInt(idParam, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
@@ -67,41 +118,47 @@ func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Iterate over the video data
-	UpdateVideoPlaylists(db, id, videoUpdate.Playlists)
+	// Get video from db
+	video, err := videoRepo.Get(id) 
 
-	// Prepare the SQL update statement
-	stmt, err := db.Prepare("UPDATE videos SET title = ? WHERE id = ?")
-	if err != nil {
-		http.Error(w, "Failed to prepare update statement", http.StatusInternalServerError)
-		return
+	if (err != nil) {
+		http.Error(w, "Unable to get video", http.StatusBadRequest)
 	}
-	defer stmt.Close()
 
-	// Execute the update statement with the retrieved values
-	_, err = stmt.Exec(videoUpdate.Title, id)
+	video.Title = videoUpdate.Title
+
+	// Update the playlistVideo table
+	UpdateVideoPlaylists(playlistVideoRepo, id, videoUpdate.Playlists)
+
+	err = videoRepo.Update(video)
+
 	if err != nil {
 		http.Error(w, "Failed to update video", http.StatusInternalServerError)
 		return
 	}
 
-	// Return a success message
+	// Return Success message
 	fmt.Fprintf(w, "Video updated successfully")
 }
 
 func DeleteVideo(w http.ResponseWriter, r *http.Request) {
+	videoRepo := getVideoRepository(r)
+	playlistVideoRepo := getPlaylistVideoRepository(r)
+
 	// Get config from context
 	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath 
-	db := r.Context().Value(middleware.DBKey).(*sql.DB)
 
 	// Get the video ID from the request URL parameters
 	vars := mux.Vars(r)
 	idParam := vars["id"]
-	id, _ := strconv.Atoi(idParam)
+	id, _ := strconv.ParseInt(idParam, 10, 64)
 
 	// get the file_id and file_format  
 	// to use for deleting folders and files
-	fileID, fileEXT, err := getFileIdAndExt(id, db)
+	video, err := videoRepo.Get(id)
+	fileID  := video.FileID
+	fileEXT := video.FileFormat
+
     if err != nil {
 		// Check if the error is due to video not found
 		if err == sql.ErrNoRows {
@@ -114,23 +171,17 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// First delete playlist_videos 
-	err = DeletePlaylistVideosFromDB(id, db)
+	// Delete playlist_videos that have the video id 
+	err = playlistVideoRepo.Delete(-1, id)
 
     if err != nil {
-		// Check if the error is due to video not found
-		if err == sql.ErrNoRows {
-			// Return a 404 Not Found response
-			http.Error(w, "Video not found", http.StatusNotFound)
-		} else {
-			// Return a 500 Internal Server Error response
-			http.Error(w, "Failed to delete Video", http.StatusInternalServerError)
-		}
+		// Return a 500 Internal Server Error response
+		http.Error(w, "Failed to delete playlist videos", http.StatusInternalServerError)
 		return
 	}
 
 	// Delete the video from the database based on the ID
-	err = deleteVideoFromDB(id, db)
+	err = videoRepo.Delete(id)
 
 	if err != nil {
 		// Check if the error is due to video not found
@@ -151,69 +202,26 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func deleteVideoFromDB(id int, db *sql.DB) error {
-	// Prepare the DELETE statement
-	stmt, err := db.Prepare("DELETE FROM videos WHERE id = ?")
-
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
-	// Execute the DELETE statement with the ID parameter
-	_, err = stmt.Exec(id)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Fetches a video and returns the file ID
-func getFileIdAndExt(videoID int, db *sql.DB) (string, string, error) {
-	var fileID string
-	var fileEXT string
-
-	// Prepare the SQL statement
-	stmt, err := db.Prepare("SELECT file_id, file_format FROM videos WHERE id = ?")
-	if err != nil {
-		return "", "", fmt.Errorf("failed to prepare SQL statement: %w", err)
-	}
-	defer stmt.Close()
-
-	// Execute the SQL statement
-	err = stmt.QueryRow(videoID).Scan(&fileID, &fileEXT)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to fetch video: %w", err)
-	}
-
-	return fileID, fileEXT, nil
-}
-
 func GetVideo(w http.ResponseWriter, r *http.Request) {
 	// read from context
 	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath  // Type assert to your config type
-	db := r.Context().Value(middleware.DBKey).(*sql.DB)
+	videoRepo := getVideoRepository(r)
 
 	// Get the video ID from the URL path
 	vars := mux.Vars(r)
 	videoIDStr := vars["id"]
 
 	// Convert the video ID to an integer
-	videoID, err := strconv.Atoi(videoIDStr)
+	videoID, err := strconv.ParseInt(videoIDStr, 10, 64)
 
 	if err != nil {
 		http.Error(w, "Invalid video ID", http.StatusBadRequest)
 		return
 	}
 
-	video := models.Video{}
-
-	err = db.QueryRow("SELECT * FROM videos WHERE id = ?", videoID).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
+	video, err := videoRepo.Get(videoID)
 
 	if err != nil {
-		log.Println(err.Error())
 		http.Error(w, "Video not found", http.StatusNotFound)
 		return
 	}
@@ -267,13 +275,20 @@ func GetVideoFormats(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonFormats)
 }
 
-//TODO - clean up this function
+func getVideoRepository(r *http.Request) repository.VideoRepository{
+	return r.Context().Value(middleware.RepositoryKey).(*repository.Repositories).VideoRepo
+}
+
+func getPlaylistVideoRepository(r *http.Request) repository.PlaylistVideoRepository{
+	return r.Context().Value(middleware.RepositoryKey).(*repository.Repositories).PlaylistVideoRepo
+}
+
 // Downloads video from yt-dlp
 func CreateVideo(w http.ResponseWriter, r *http.Request) {
 	// Context
 	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath
-	db := r.Context().Value(middleware.DBKey).(*sql.DB)
-
+	videoRepository := getVideoRepository(r)
+	playlistVideoRepository := getPlaylistVideoRepository(r)
 	tempFolderpath := files.GetTemporaryFolderPath(rootFolderPath)
 
 	var err error
@@ -320,69 +335,49 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 
 	currentDate := time.Now().Format("2006-01-02")
 
-	fileID, _ := generateFileID(db)
+	fileID, _ := generateFileID()
 
 	//downloadVideoPath := filepath.Join(tempFolderpath, fileID) 
 	downloadImgPath   := filepath.Join(tempFolderpath, fileID)
 	downloadVideoPathWithExt := filepath.Join(tempFolderpath, fileID+".mp4") 
 	downloadImgPathWithExt   := filepath.Join(tempFolderpath, fileID+".jpg")
 
-	// Create Video in db 
-	createVideoStatement, err := db.Prepare(`
-		INSERT INTO videos (download_date, url, title, yt_id, file_id, duration, download_complete, file_format) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`)
+	video := models.Video {
+		DownloadDate: currentDate, 
+		FileID: fileID, 
+		Url: url,
+		Title: title,
+		YtID: ytID,
+		Duration: duration,
+		DownloadComplete: false,
+		FileFormat: "mp4",
+	}
 
-	// Check if error creating statement
+	videoID, err := videoRepository.Create(video)
+
+	video.ID = videoID;
+
 	if err != nil {
-		log.Println("error creating sql statement insert into videos")
-		log.Println(err.Error())
+		log.Println("Error inserting video into videos table", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+    
+	playlistId, err := strconv.ParseInt(playlistID, 10, 64)
 
-	defer createVideoStatement.Close()
+	if err != nil {
+		log.Println("Bad playlist id, error parsing to integer", playlistID)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	
+	id, err := playlistVideoRepository.Create(playlistId, videoID)
 
-	result, err := createVideoStatement.Exec(currentDate, url, title, ytID, fileID, duration, false, "mp4")
+	if err != nil {
+		log.Println("Error inserting into playlistVideo table", id)
+	}
 
 	// Check if error processing sql statement
 	if err != nil {
-		log.Println("error processing sql")
-		log.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	videoID, err := result.LastInsertId()
-
-	if err != nil {
-		log.Println("error getting last insert id")
-		log.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Create playlist video
-	createPlaylistVideosStatement, err := db.Prepare(`
-		INSERT INTO playlist_videos (playlist_id, video_id) 
-		VALUES (?, ?)
-	`)
-
-	// Check if error creating statement
-	if err != nil {
-		log.Println("error creating playlist_videos statement")
-		log.Println(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer createPlaylistVideosStatement.Close()
-
-	_, err = createPlaylistVideosStatement.Exec(playlistID, videoID)
-
-	// Check if error processing sql statement
-	if err != nil {
-		log.Println("error processing playlist_videos statement")
 		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -396,7 +391,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update video in db
-		updateVideoOnDownloadSuccess(db, downloadVideoPathWithExt)
+		updateVideoOnDownloadSuccess(videoRepository, video, downloadVideoPathWithExt)
 
 		log.Println("youtube id is :" + ytID)
        
@@ -448,14 +443,7 @@ func extractThumbnail(videoPath, outputPath string) error {
 	return nil
 }
 
-func updateVideoOnDownloadSuccess(db *sql.DB, filepath string) {
-    // Prepare the SQL statement for inserting a row
-	stmt, err := db.Prepare("INSERT INTO videos (download_complete, download_date, md5_checksum) VALUES (?, ?, ?)")
-
-	if err != nil {
-		log.Println(err)
-	}
-
+func updateVideoOnDownloadSuccess(repo repository.VideoRepository, video models.Video, filepath string) {
 	currentTime := time.Now()
 	formattedTime := currentTime.Format("2006-01-02 15:04:05")
 	md5Checksum, checksumErr := computeChecksum(filepath)
@@ -464,36 +452,18 @@ func updateVideoOnDownloadSuccess(db *sql.DB, filepath string) {
 		log.Println("Error generating video file checksum") 
 	}
 
-	// Execute the SQL statement with the values for the row
-	_, _ = stmt.Exec(true, formattedTime, md5Checksum)
+	video.DownloadComplete = true
+	video.DownloadDate = formattedTime
+	video.Md5Checksum = sql.NullString{String: md5Checksum, Valid: true}
+
+    // Prepare the SQL statement for inserting a row
+	repo.Update(video)
 }
 
-func checkFileIDExists(fileID string, db *sql.DB) (bool, error) {
-	// Prepare the SQL statement
-	stmt, err := db.Prepare("SELECT COUNT(*) FROM videos WHERE file_id = ?")
-	if err != nil {
-		return false, err
-	}
-	defer stmt.Close()
-
-	// Execute the SQL statement with the file ID parameter
-	var count int
-	err = stmt.QueryRow(fileID).Scan(&count)
-	if err != nil {
-		return false, err
-	}
-
-	// Check if the count is greater than 0
-	exists := count > 0
-
-	return exists, nil
-}
-
-func generateFileID(db *sql.DB) (string, error) {
+func generateFileID() (string, error) {
 	// Define the set of alphanumeric characters
 	alphanumeric := "abcdef0123456789"
 
-	for {
 		// Generate a random string of length 12 
 		fileID := ""
 		for i := 0; i < 12; i++ {
@@ -507,17 +477,7 @@ func generateFileID(db *sql.DB) (string, error) {
 			fileID += string(alphanumeric[index.Int64()])
 		}
 
-		// Check if the file ID exists in the table
-		exists, err := checkFileIDExists(fileID, db)
-		if err != nil {
-			return "", err
-		}
-
-		// If the file ID does not exist, return it
-		if !exists {
-			return fileID, nil
-		}
-	}
+	    return fileID, nil
 }
 
 func extractVideoID(url string) string  {

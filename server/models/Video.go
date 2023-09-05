@@ -5,8 +5,8 @@ import (
 )
 
 type Video struct {
-	YtID             string `json:"yt_id"`
-	ID               int    `json:"id"`
+	YtID             string `json:"yt_id" sql:"yt_id"`
+	ID               int64    `json:"id"`
 	Url              string `json:"url"`
 	FileID           string `json:"file_id"`
 	FileFormat       string `json:"file_format"`
