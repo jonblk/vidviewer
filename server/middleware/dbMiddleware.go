@@ -18,16 +18,15 @@ func DBMiddleware(next http.Handler) http.Handler {
 		}
 
 	    rootFolderPath := r.Context().Value(ConfigKey).(config.Config).FolderPath 
-		dbPath := files.GetDatabasePath(rootFolderPath)
+		path := files.GetDatabasePath(rootFolderPath)
 
-		sql, exists := db.GetDB(dbPath)
+		sql, exists := db.GetDB(path)
 
 		// Initialize DB if its nil
 		if (!exists) {
-			// Path to database
-
 			// Initialize database
-			sql = db.UpdateActiveConnection(dbPath)
+			log.Println(path)
+			sql = db.UpdateActiveConnection(path)
 		}         
 
 		if (sql == nil) {

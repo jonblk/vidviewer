@@ -4,7 +4,6 @@ import LeftMenu from './components/LeftMenu';
 import VideoGrid from './components/VideoGrid';
 import Video from './components/Video';
 import Modal from './components/Modal';
-import AddVideoForm from './components/AddVideoForm';
 import EditPlaylistForm from './components/EditPlaylistForm';
 import NewPlaylistForm from './components/NewPlaylistForm';
 import EditVideoForm from './components/EditVideoForm';
@@ -13,6 +12,7 @@ import { useDarkMode } from './hooks/useDarkMode';
 import { useWebSocket } from 'react-use-websocket/dist/lib/use-websocket';
 import { useEvent } from './hooks/useEvent';
 import ConfigForm from './components/ConfigForm';
+import AddVideoModal from './components/AddVideoModal';
 
 export interface Playlist {
   id: number;
@@ -169,10 +169,7 @@ const App: React.FC = () => {
         isOpen={modalState !== ModalState.none}
       >
         {modalState === ModalState.addVideo && (
-          <AddVideoForm
-            playlists={playlists}
-            onSuccess={() => setModalState(ModalState.none)}
-          />
+          <AddVideoModal playlists={playlists} onSuccess={()=> setModalState(ModalState.none)}/>
         )}
         {modalState === ModalState.addPlaylist && (
           <NewPlaylistForm

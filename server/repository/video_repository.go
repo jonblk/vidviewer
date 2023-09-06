@@ -24,9 +24,6 @@ func (repo *VideoRepository) GetBy(value string, by string) (models.Video, error
 	video := models.Video{}
     query := fmt.Sprintf("SELECT * FROM videos WHERE %s = ?", by)
 
-	log.Println(query)
-	log.Println(value)
-
 	err := repo.GetDB().QueryRow(query, value).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
 
 	if err != nil {
@@ -96,8 +93,8 @@ func (repo *VideoRepository) Update(video models.Video) error {
 // Insert video it into videos table
 func (repo *VideoRepository) Create(video models.Video) (int64, error) {
 	createVideoStatement, err := repo.GetDB().Prepare(`
-		INSERT INTO videos (download_date, url, title, yt_id, file_id, duration, download_complete, file_format) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO videos (download_date, url, title, yt_id, file_id, duration, download_complete, file_format, md5_checksum) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return -1, err
@@ -105,7 +102,7 @@ func (repo *VideoRepository) Create(video models.Video) (int64, error) {
 
 	defer createVideoStatement.Close()
 
-	result, err := createVideoStatement.Exec(video.DownloadDate, video.Url, video.Title, video.YtID, video.FileID, video.Duration, video.DownloadComplete, video.FileFormat)
+	result, err := createVideoStatement.Exec(video.DownloadDate, video.Url, video.Title, video.YtID, video.FileID, video.Duration, video.DownloadComplete, video.FileFormat, video.Md5Checksum)
 
 	// Check if error processing sql statement
 	if err != nil {

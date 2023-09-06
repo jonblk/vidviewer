@@ -9,6 +9,7 @@ Run locally from a go binary.
 ## Features
 
 - Dark/light mode
+- Import videos from disk (webm, mp4)
 - Video resolution options
 - Playlists
 
@@ -45,12 +46,13 @@ The rootFolder also contains the sqlite database and a temp folder for in-progre
 
 ## TODO 
 
-- improve react performance 
+- search function
 - download progress widget with 'cancel download' option 
-- import video files from disk
 - user login? 
 - file format options? (currently it defaults to mp4) 
 - export videos 
+- improve react performance 
+- <s>import video files from disk</s>
 - <s>SSL</s>
 - <s>infinite scroll </s>
 - <s>'all videos' view option</s>

@@ -3,6 +3,7 @@ package files
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,8 +15,11 @@ func GetTemporaryFolderPath(rootPath string) string {
 	return filepath.Join(rootPath, "temp")
 }
 
+// BUG 
+// If there is a space in folder name it silently fails
+// when initializing sql db. 
 func GetDatabasePath(rootPath string) string {
-	return filepath.Join(rootPath, "database.db")
+	return filepath.Join(rootPath, "database.db") 
 }
 
 func getFilesFolderPath(rootPath string) string {
@@ -85,7 +89,7 @@ func GetFilePath(rootFolderPath string, fileID string, fileFormat string) string
 
 // Saves the video and thumbnail into the appropriate
 // root folder, creating sub folders according to fileID 
-func SaveVideoFileAndThumbnail(rootPath string, videoPath string, imgPath string) (string, error) {
+func CreateFileFolders(rootPath string, fileID string) (string, error) {
 	// Check if rootPath exists, create if it doesn't
 	if _, err := os.Stat(rootPath); os.IsNotExist(err) {
 		err := os.MkdirAll(rootPath, os.ModePerm)
@@ -94,16 +98,8 @@ func SaveVideoFileAndThumbnail(rootPath string, videoPath string, imgPath string
 		}
 	}
 
-	// Split video filename into base name and extension
-	videoBaseName := filepath.Base(videoPath)
-	vidExt := filepath.Ext(videoPath)
-	videoID := videoBaseName[:len(videoBaseName)-len(vidExt)]
-
-    // Split video filename into base name and extension
-	imgBaseName := filepath.Base(imgPath)
-
 	// Generate unique folder name based on hashing mechanism
-	folderPath := filepath.Join(getFilesFolderPath(rootPath), videoID[:2], videoID[2:4], videoID[4:6])
+	folderPath := filepath.Join(getFilesFolderPath(rootPath), fileID[:2], fileID[2:4], fileID[4:6])
 
 	// Create new folder if it doesn't exist
 	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
@@ -113,6 +109,7 @@ func SaveVideoFileAndThumbnail(rootPath string, videoPath string, imgPath string
 		}
 	}
 
+	/*
 	// Move video file to the new folder
 	newVideoFilePath := filepath.Join(folderPath, videoBaseName)
 	vidRenameError := os.Rename(videoPath, newVideoFilePath)
@@ -126,8 +123,34 @@ func SaveVideoFileAndThumbnail(rootPath string, videoPath string, imgPath string
 	if imgRenameError != nil {
 		return "", imgRenameError
 	}
+	*/
 
 	return folderPath, nil
+}
+
+func MoveFile(oldPath string, newPath string) error {
+	err := os.Rename(oldPath, newPath)
+	return err
+}
+
+func CopyFile(from string, to string) error {
+	srcFile, err := os.Open(from)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	destFile, err := os.Create(to)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, srcFile)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 
