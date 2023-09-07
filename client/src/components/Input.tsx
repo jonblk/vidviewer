@@ -1,4 +1,5 @@
 import React from "react";
+import { HiOutlineSearch } from "react-icons/hi";
 
 interface InputProps {
   type: string;
@@ -12,6 +13,7 @@ interface InputProps {
 
 const Input: React.FC<InputProps> = ({ label, onFocus, onBlur, type, id, value, onChange }) => {
   return (
+    <div className="relative">
     <input
       aria-label={label}
       autoFocus
@@ -21,9 +23,14 @@ const Input: React.FC<InputProps> = ({ label, onFocus, onBlur, type, id, value, 
       onFocus={onFocus}
       onBlur={onBlur}
       onChange={onChange}
-      className="border border-neutral-200 dark:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-600 rounded py-2 px-2 w-full  leading-tight focus:outline-none focus:shadow-outline focus:ring-1 focus:ring-blue-400 "
+      className="text-black border border-neutral-200 dark:bg-transparent dark:text-neutral-200 dark:border-neutral-700 py-2 px-2 w-full leading-tight focus:outline-none focus:shadow-outline rounded"
     />
+    {type === "search" && <div className="absolute right-3 top-[12px]">
+      <HiOutlineSearch />
+    </div>
+    }
+    </div>
   );
 };
 
-export default Input;
+export default Input

@@ -61,6 +61,7 @@ const App: React.FC = () => {
 
   const [isConfigMissing, setIsConfigMissing] = useState<boolean>();
 
+  const [search, setSearch]  = useState("")
 
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
@@ -231,6 +232,8 @@ const App: React.FC = () => {
           isDarkMode={darkMode}
           openAddVideoMenu={onClickAddVideo}
           openConfigMenu={() => setModalState(ModalState.config)}
+          search = {search}
+          handleSearchChange={(v: string) => setSearch(v)}
         /></div>
         {!selectedVideo && (
           <LeftMenu
@@ -252,6 +255,7 @@ const App: React.FC = () => {
                 playlistId={selectedPlaylist.id}
                 onClickEditVideo={onClickEditVideo}
                 onClickOpenVideo={setSelectedVideo}
+                search={search.length >= 2 ? search : ""}
               />
             )
           ) : (

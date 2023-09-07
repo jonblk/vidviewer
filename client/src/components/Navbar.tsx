@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FiSettings } from 'react-icons/fi';
 import { HiOutlineMoon, HiOutlineSun } from 'react-icons/hi';
 import { IoIosAdd } from 'react-icons/io';
+import Input from './Input';
 
 interface NavbarProps {
   isVideoMode: boolean;
@@ -9,9 +10,11 @@ interface NavbarProps {
   openConfigMenu: () => void;
   toggleTheme: () => void;
   isDarkMode: boolean;
+  handleSearchChange: (v: string) => void;
+  search: string
 }
 
-const Navbar: React.FC<NavbarProps> = ({ isVideoMode, toggleTheme, isDarkMode, openAddVideoMenu, openConfigMenu }) => {
+const Navbar: React.FC<NavbarProps> = ({ isVideoMode, toggleTheme, isDarkMode, openAddVideoMenu, openConfigMenu, handleSearchChange, search }) => {
   return (
     <nav
       className={
@@ -19,7 +22,16 @@ const Navbar: React.FC<NavbarProps> = ({ isVideoMode, toggleTheme, isDarkMode, o
       }
     >
       <div className="flex items-center justify-between h-full bg-none">
-        <div className="text-lg font-bold">VidViewer</div>
+        <div className="flex items-center">
+          <div className="text-lg font-bold w-[230px]">VidViewer</div>
+          <Input
+            type="search"
+            label="vsearch"
+            onChange={(e) => handleSearchChange(e.target.value)}
+            value={search}
+            id="search"
+          />
+        </div>
         <div className="flex items-center">
           <div className="flex gap-2">
             <button
