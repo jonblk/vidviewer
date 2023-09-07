@@ -5,12 +5,12 @@ Vidviewer is a simple way to download, organize, and watch your [yt-dlp](https:/
 Run locally from a go binary.  
 
 ![vidviewer](https://github.com/jonblk/vidviewer/assets/132053602/571abe64-ef30-407f-9b93-55b0f3db22f1)
-
 ## Features
 
 - Dark/light mode
 - Import videos from disk (webm, mp4)
-- Video resolution options
+- Download videos with ytp  
+- Search videos
 - Playlists
 
 ## Requirements
