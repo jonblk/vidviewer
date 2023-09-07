@@ -3,8 +3,7 @@
 Vidviewer is a simple way to download, organize, and watch your [yt-dlp](https://github.com/yt-dlp/yt-dlp) videos.  
 
 Run locally from a go binary.  
-
-![vidviewer2](https://github.com/jonblk/vidviewer/assets/132053602/6e885be6-a820-4c28-a7b2-6fcbcf447bec)
+![vidviewer](https://github.com/jonblk/vidviewer/assets/132053602/571abe64-ef30-407f-9b93-55b0f3db22f1)
 
 ## Features
 
@@ -46,12 +45,13 @@ The rootFolder also contains the sqlite database and a temp folder for in-progre
 
 ## TODO 
 
-- search function
+ 
 - download progress widget with 'cancel download' option 
 - user login? 
 - file format options? (currently it defaults to mp4) 
 - export videos 
-- improve react performance 
+- improve react performance
+- <s>search function</s>
 - <s>import video files from disk</s>
 - <s>SSL</s>
 - <s>infinite scroll </s>
