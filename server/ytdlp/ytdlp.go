@@ -3,7 +3,6 @@ package ytdlp
 import (
 	"bytes"
 	"log"
-	"os"
 	"os/exec"
 	"strings"
 )
@@ -95,45 +94,31 @@ func ExtractVideoInfo(url string) (string, string, error) {
 	return duration, title, nil
 }
 
-func DownloadVideo(url string, format string, filepath string, callback func(v bool)) {
-	// Set the desired video quality in the format string
-	if format == "" {
-	  format = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
-	}  else {
-	  format = format + "+bestaudio[ext=m4a]/best[ext=mp4]"
-	} 
 
-	log.Println("Video format: " + format)
+
+func DownloadVideo(url string, format string, filepath string, callback func(v bool)) {
+	 // Set the desired video quality in the format string
+    if format == "" {
+        format = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
+    } else {
+        format = format + "+bestaudio[ext=m4a]/best[ext=mp4]"
+    } 
+
+    log.Println("Video format: " + format)
 
     // Define command and arguments
     cmd := exec.Command("yt-dlp", "-f", format, "-o", filepath, url)
 
-    cmd.Stderr = os.Stderr
+    // Run the command and capture combined standard output and standard error
+    output, err := cmd.CombinedOutput()
+    outputStr := string(output)
 
-    // Start the command
-    err := cmd.Start()
-    if err != nil {
-        log.Fatalf("Failed to execute command: %v", err)
-    }
-
-    // Flag to track interruption status
-    interrupted := false
-
-	// Check if the command has finished
-	err = cmd.Wait()
-	if err != nil {
-		// Set the interrupted flag if the command was interrupted
-		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == -1 {
-			log.Println("Error processing video:" + err.Error())
-			interrupted = true
-		} else {
-			log.Println("Error processing video:" + err.Error())
-			interrupted = true
-		}
-	} else {
-	    log.Println("Video download complete")
+    // Check if the output contains the string "ERROR"
+    if strings.Contains(outputStr, "ERROR") || err != nil {
+        callback(true)
+    } else {
+		// No error occurred
+		callback(false)
 	}
-
-	callback(interrupted)
 }
 

@@ -11,6 +11,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -237,7 +238,7 @@ func GetVideoFormats(w http.ResponseWriter, r *http.Request) {
 	// Get the value of the "url" parameter from the URL query string
 	urlParam := r.URL.Query().Get("url")
 
-    // TEMPORARY
+  // TEMPORARY
 	formats, err := ytdlp.GetFormats(urlParam)
 
 	if err != nil {
@@ -262,6 +263,10 @@ func getVideoRepository(r *http.Request) repository.VideoRepository{
 	return r.Context().Value(middleware.RepositoryKey).(*repository.Repositories).VideoRepo
 }
 
+func getRepositories(r *http.Request) *repository.Repositories{
+	return r.Context().Value(middleware.RepositoryKey).(*repository.Repositories)
+}
+
 func getPlaylistVideoRepository(r *http.Request) repository.PlaylistVideoRepository{
 	return r.Context().Value(middleware.RepositoryKey).(*repository.Repositories).PlaylistVideoRepo
 }
@@ -274,17 +279,23 @@ type NewVideoFormData struct {
   Format     string   `json:"format"`
 }
 
+type ErrorResponse struct {
+	Errors []string `json:"errors"`
+}
+
 func CreateVideo(w http.ResponseWriter, r *http.Request) {
 	// Context
+	repositories := getRepositories(r)
 	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath
-	videoRepository := getVideoRepository(r)
-	playlistVideoRepository := getPlaylistVideoRepository(r)
+	videoRepository := repositories.VideoRepo
+	playlistRepository := repositories.PlaylistRepo 
+	playlistVideoRepository :=  repositories.PlaylistVideoRepo
 	tempFolderpath := files.GetTemporaryFolderPath(rootFolderPath)
 
   body, err := ioutil.ReadAll(r.Body)
 
   if err != nil {
-		log.Println("Error reading request body")
+	log.Println("Error reading request body")
     http.Error(w, "Error reading request body", http.StatusInternalServerError)
     return
   }
@@ -297,6 +308,16 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
     return
   }
 
+	errors := validateNewVideoForm(data, playlistRepository)
+
+	if len(errors) > 0 {
+		// If there are errors, return a JSON response
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Errors: errors})
+		return
+	}
+
   switch data.Source {
   case "disk":
     loadVideosFromDisk(
@@ -307,7 +328,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 			rootFolderPath, 
 		)
   case "ytdlp":
-    loadVideoWithYtdlp(
+    ytdlpError := loadVideoWithYtdlp(
 			data.URL, 
 			fmt.Sprint(data.PlaylistID),
 			data.Format,
@@ -316,8 +337,13 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 			rootFolderPath,
 			tempFolderpath,
 	  )
-  default:
-    http.Error(w, "Invalid source", http.StatusBadRequest)
+
+		if ytdlpError != nil{
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(ErrorResponse{Errors: []string{ytdlpError.Error()}})
+			return
+		}
   }
 }
 
@@ -343,6 +369,45 @@ func getFilesWithExtensions(folderPath string, extensions []string) ([]string, e
 	return paths, nil
 }
 
+func validateNewVideoForm(data NewVideoFormData, r repository.PlaylistRepository) []string {
+	var errors []string 
+
+	if data.PlaylistID < 1 {
+		errors = append(errors, "Invalid playlist")
+	} else {
+		_, err := r.Get(fmt.Sprint(data.PlaylistID))
+		if err != nil {
+		  errors = append(errors, "Could not find playlist")
+		}
+	}
+
+	if data.Source == "disk" {
+		if data.Folder == "" {
+			errors = append(errors, "Folder cannot be blank")
+		} else {
+			_, err := ioutil.ReadDir(data.Folder)
+
+			if err != nil {
+				errors = append(errors, "Folder does not exist")
+			}
+		}
+	} else if data.Source == "ytdlp" {
+		if data.URL == "" {
+			errors = append(errors, "URL cannot be blank")
+		} else if !isValidURL(data.URL) {
+			errors = append(errors, "Invalid URL")
+		}
+	} else {
+		errors = append(errors, "Form type not disk, or ydlp")
+	}
+
+	return errors
+}
+
+func isValidURL(str string) bool {
+	u, err := url.Parse(str)
+	return err == nil && u.Scheme != "" && u.Host != ""
+}
 
 func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo repository.PlaylistVideoRepository, videoRepo repository.VideoRepository, rootFolderPath string) error {
 	paths, err := getFilesWithExtensions(folderPath, []string{".mp4", ".webm"})
@@ -495,6 +560,7 @@ func loadVideoWithYtdlp(url string, playlistID string, format string, playlistVi
 		if (isError) {
 			log.Println("Error during download! Notifying client.")
 			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadFail)})
+			return
 		}
 
 		// Update video in db
@@ -527,7 +593,8 @@ func loadVideoWithYtdlp(url string, playlistID string, format string, playlistVi
     if err != nil {
 			log.Println("Error moving video file from temp folder", err)
 		}
-			// Move image file from temp folder to the new folder
+			
+		// Move image file from temp folder to the new folder
 		newImageFilePath := filepath.Join(folderPath, imgBaseName)
 		err = files.MoveFile(downloadImgPathWithExt, newImageFilePath)
 		if err != nil {

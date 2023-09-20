@@ -18,24 +18,27 @@ const Navbar: React.FC<NavbarProps> = ({ isVideoMode, toggleTheme, isDarkMode, o
   return (
     <nav
       className={
-        "fixed bg-inherit top-0 left-0 px-10 py-2 w-full h-14 dark:text-neutral-300 z-20 bg-white dark:bg-neutral-950"
+        "fixed bg-inherit top-0 left-0 px-10 py-2 w-full h-14 dark:text-neutral-300 z-20 bg-white dark:bg-neutral-900"
       }
     >
       <div className="flex items-center justify-between h-full bg-none">
         <div className="flex items-center">
           <div className="text-lg font-bold w-[230px]">VidViewer</div>
-          <Input
+          {
+          !isVideoMode && <Input
             type="search"
+            transparent={true}
             label="vsearch"
             onChange={(e) => handleSearchChange(e.target.value)}
             value={search}
             id="search"
           />
+          }
         </div>
         <div className="flex items-center">
           <div className="flex gap-2">
             <button
-              className="rounded-full w-9 h-9 flex items-center justify-center dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800"
+              className="rounded-full w-9 h-9 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800"
               onClick={toggleTheme}
             >
               {isDarkMode ? (
@@ -46,7 +49,7 @@ const Navbar: React.FC<NavbarProps> = ({ isVideoMode, toggleTheme, isDarkMode, o
             </button>
             <button
               className={
-                "rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800  dark:text-neutral-400 w-9 h-9 flex items-center justify-center "
+                "rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800  w-9 h-9 flex items-center justify-center "
               }
               onClick={openConfigMenu}
             >
@@ -55,7 +58,7 @@ const Navbar: React.FC<NavbarProps> = ({ isVideoMode, toggleTheme, isDarkMode, o
 
             <button
               className={
-                "rounded-full bg-neutral-200 hover:bg-opacity-60 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700 w-9 h-9 flex items-center justify-center"
+                "rounded-full bg-neutral-200 hover:bg-opacity-60 dark:bg-neutral-800  dark:hover:bg-neutral-700 w-9 h-9 flex items-center justify-center"
               }
               onClick={openAddVideoMenu}
             >

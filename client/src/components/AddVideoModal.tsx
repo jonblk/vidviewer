@@ -15,15 +15,20 @@ interface AddVideoModalProps {
 
 interface FormData {
   source: "disk" | "ytdlp";
-  playlist_id: number;
+  playlist_id: number | null;
   folder: string | null;
   url: string | null
+  format: string | undefined
 }
 
 type VideoFormat = {
   format_id: string;
   resolution: string;
   ext: string;
+}
+
+type FormErrors = {
+  errors: string[]
 }
 
 export default function AddVideoModal({
@@ -39,6 +44,7 @@ export default function AddVideoModal({
   const [videoFormats, setVideoFormats] = useState<VideoFormat[]>([]);
   const [isFetchingVideoFormats, setIsFetchingVideoFormats] = useState(false);
   const [folder, setFolder] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
   const [isFetchingSubmit, setIsFetchingSubmit] = useState(false);
 
@@ -56,62 +62,88 @@ export default function AddVideoModal({
       const r = await fetch(
         `https://localhost:8000/video_formats?url=${encodeURIComponent(url)}`
       );
-      let v: VideoFormat[] = (await r.json()) as VideoFormat[];
-      v.reverse();
 
-      // remove duplicate resolutions
-      // NOTE - temporary fix
-      v = v.reduce((accumulator: VideoFormat[], current: VideoFormat) => {
-        const resolutionExists = accumulator.some(
-          (item: VideoFormat) => item.resolution === current.resolution
-        );
-        if (!resolutionExists) {
-          accumulator.push(current);
-        }
-        return accumulator;
-      }, []);
+      if (r.ok) {
+        let v: VideoFormat[] = (await r.json()) as VideoFormat[];
+        v.reverse();
 
-      setVideoFormats(v);
-      setSelectedVideoFormat(v[0]);
+        // remove duplicate resolutions
+        // NOTE - temporary fix
+        v = v.reduce((accumulator: VideoFormat[], current: VideoFormat) => {
+          const resolutionExists = accumulator.some(
+            (item: VideoFormat) => item.resolution === current.resolution
+          );
+          if (!resolutionExists) {
+            accumulator.push(current);
+          }
+          return accumulator;
+        }, []);
+
+        setVideoFormats(v);
+        setSelectedVideoFormat(v[0]);
+      } else {
+        setErrors(["Invalid url"])
+        setVideoFormats([]);
+        setSelectedVideoFormat(undefined);
+      }
     } catch (e) {
-      console.log(e);
+      setErrors(["Invalid url"])
+      setVideoFormats([]);
+      setSelectedVideoFormat(undefined);
     } finally {
       setIsFetchingVideoFormats(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<Element>) => {
+  const handleSubmit =  async (e: React.FormEvent<Element>) => {
     e.preventDefault();
 
-    if (selectedPlaylist !== null) {
-      const data: FormData = {
-        source: type.value === 1 ? "disk" : "ytdlp",
-        playlist_id: selectedPlaylist,
-        folder,
-        url
-      } 
+    if (isFetchingSubmit || isFetchingVideoFormats) {
+      return;
+    }
 
-      const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      };
+    // No video format selected
+    // Which means no valid url has been entered
+    if (type.value === 0 && !selectedVideoFormat) {
+      setErrors(["Please enter a valid URL"]);
+      return;
+    }
 
-      setIsFetchingSubmit(true);
+    const data: FormData = {
+      source: type.value === 1 ? "disk" : "ytdlp",
+      playlist_id: selectedPlaylist,
+      format: selectedVideoFormat?.format_id,
+      folder,
+      url,
+    };
 
-      fetch("https://localhost:8000/videos", requestOptions)
-        .then((response) => {
-          if (response.status === 200) {
-            setIsFetchingSubmit(false);
-            onSuccess();
-          } else {
-            alert(response.statusText);
-          }
-        })
-        .catch((error) => {
-          console.error("Error sending the POST request:", error);
-          setIsFetchingSubmit(false);
-        });
+    const requestOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    };
+
+    setIsFetchingSubmit(true);
+
+    try {
+      const response = await fetch(
+        "https://localhost:8000/videos",
+        requestOptions
+      );
+
+      if (response.ok) {
+        setIsFetchingSubmit(false);
+        onSuccess();
+      } else {
+        const errors = await response.json() as FormErrors;
+        console.log("Errors:", errors);
+        console.log(response.statusText);
+        setErrors(errors.errors)
+        setIsFetchingSubmit(false);
+      }
+    } catch (error) {
+      console.error("Error sending the POST request:", error);
+      setIsFetchingSubmit(false);
     }
   };
 
@@ -126,51 +158,81 @@ export default function AddVideoModal({
 
   return (
     <div className="flex flex-col gap-3">
-      <div>
-      <Label htmlFor="url">Source</Label>
-      <Dropdown
-        selected={type}
-        onSelect={(o: Option) => setType(o)}
-        isFetching={false}
-        disabled={false}
-        options={[
-          { value: 0, label: "🔗 URL" },
-          { value: 1, label: "📂 Disk" },
-        ]}
-      /></div>
+      {
+      errors.length > 0 && <div className="text-red-500">
+        <p className="font-bold">Error{errors.length > 1 ? "s" : ""}: </p>
+        <ul> {errors.map(e => <li>{e}</li>)} </ul>
+      </div>
+      }
 
-      {type.value === 0 && 
-      <div className="flex flex-col gap-2">
-       <div>
-        <Label htmlFor="url">URL</Label>
-        <Input 
-          label="Enter url for video"
-          type="text" 
-          id="url" 
-          value={url} 
-          onChange={handleUrlChange} 
+      <div>
+        <Label htmlFor="url">Source</Label>
+        <Dropdown
+          selected={type}
+          onSelect={(o: Option) => {setErrors([]); setType(o)}}
+          isFetching={false}
+          disabled={false}
+          options={[
+            { value: 0, label: "🔗 URL" },
+            { value: 1, label: "📂 Disk" },
+          ]}
         />
       </div>
-      <div>
-        <Label htmlFor="video_format">
-          Resolution
-        </Label>
-        <Dropdown
-          selected={selectedVideoFormat ? {value: selectedVideoFormat.format_id, label: selectedVideoFormat.resolution} : undefined}
-          isFetching={isFetchingVideoFormats}
-          disabled={videoFormats.length === 0}
-          options={videoFormats.map(p=>{return{label:p.resolution, value: p.format_id}})}
-          onSelect={(o: Option) => {setSelectedVideoFormat(videoFormats.find(vf=> vf.format_id ===o.value))}}
-        />
-      </div> 
-      </div>}
 
-      {type.value === 1 && <div>
-        <Label htmlFor="Folder Path">Folder Path  <span className="text-xs text-neutral-400">(.mp4, .webm)</span></Label>
-        
-        <Input onChange={v=>setFolder(v.target.value)} type="input" id="Folder Path" label="Folder Path" value={folder} />
-    </div> 
-      }
+      {type.value === 0 && (
+        <div className="flex flex-col gap-2">
+          <div>
+            <Label htmlFor="url">URL</Label>
+            <Input
+              label="Enter url for video"
+              type="text"
+              id="url"
+              value={url}
+              onChange={handleUrlChange}
+            />
+          </div>
+          <div>
+            <Label disabled={!selectedVideoFormat} htmlFor="video_format">Resolution</Label>
+            <Dropdown
+              selected={
+                selectedVideoFormat
+                  ? {
+                      value: selectedVideoFormat.format_id,
+                      label: selectedVideoFormat.resolution,
+                    }
+                  : undefined
+              }
+              isFetching={isFetchingVideoFormats}
+              disabled={videoFormats.length === 0}
+              options={videoFormats.map((p) => {
+                return { label: p.resolution, value: p.format_id };
+              })}
+              onSelect={(o: Option) => {
+                setSelectedVideoFormat(
+                  videoFormats.find((vf) => vf.format_id === o.value)
+                );
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {type.value === 1 && (
+        <div>
+          <Label htmlFor="Folder Path">
+            Folder Path{" "}
+            <span className="text-xs text-neutral-400">(.mp4, .webm)</span>
+          </Label>
+
+          <Input
+            onChange={(v) => setFolder(v.target.value)}
+            type="input"
+            id="Folder Path"
+            label="Folder Path"
+            value={folder}
+          />
+        </div>
+      )}
 
       <div>
         <Label htmlFor="playlist">Playlist</Label>
@@ -193,7 +255,13 @@ export default function AddVideoModal({
         disabled={isFetchingSubmit}
         type="submit"
       >
-        {isFetchingSubmit ? <Spinner /> : type.value === 0 ? "Download Video" : "Import Videos"}
+        {isFetchingSubmit ? (
+          <Spinner />
+        ) : type.value === 0 ? (
+          "Download Video"
+        ) : (
+          "Import Videos"
+        )}
       </Button>
     </div>
   );

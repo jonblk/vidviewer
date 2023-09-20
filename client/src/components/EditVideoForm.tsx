@@ -55,10 +55,15 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
   const handleDelete = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      await fetch(`https://localhost:8000/videos/${id}`, {
+      const response = await fetch(`https://localhost:8000/videos/${id}`, {
         method: "DELETE", 
       })
-      onSuccess().catch(e=>console.log(e));
+
+      if (response.ok) {
+        onSuccess().catch(e=>console.log(e));
+      } else {
+        console.log("Error editing video")
+      }
     } catch (e) {
       console.log(e);
     }

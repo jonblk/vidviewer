@@ -15,8 +15,10 @@ const throttle = <F extends (...args: any[]) => any>(func: F, delay: number): ((
 export const useInfiniteScroll = (
   callback: () => void,
   offset = 10
-): [boolean, React.Dispatch<React.SetStateAction<boolean>>, RefObject<HTMLDivElement>] => {
+): [boolean, React.Dispatch<React.SetStateAction<boolean>>, React.Dispatch<React.SetStateAction<boolean>>,RefObject<HTMLDivElement>] => {
   const [isFetching, setIsFetching] = useState(false);
+  const [hasMore, setHasMore] = useState(true)
+
   const scrollTriggerRef = useRef<HTMLDivElement>(null);
 
   // Set loading 
@@ -26,10 +28,11 @@ export const useInfiniteScroll = (
       window.innerHeight + window.pageYOffset >=
         scrollTriggerRef.current.offsetTop - offset &&
       !isFetching
+      && hasMore
     ) {
       callback();
     }
-  }, [isFetching, callback, offset]);
+  }, [isFetching, callback, offset, hasMore]);
 
   // Add scroll listener to window
   useEffect(() => {
@@ -38,5 +41,5 @@ export const useInfiniteScroll = (
     return () => window.removeEventListener('scroll', throttledCallback);
   }, [handleScroll]);
 
-  return [isFetching, setIsFetching, scrollTriggerRef];
+  return [isFetching, setIsFetching, setHasMore, scrollTriggerRef];
 };

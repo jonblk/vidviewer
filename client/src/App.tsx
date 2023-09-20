@@ -224,7 +224,7 @@ const App: React.FC = () => {
           </div>
         )}
       </Modal>
-      <div className="min-h-screen h-fit dark:bg-neutral-950 dark:text-neutral-100">
+      <div className="min-h-screen h-fit dark:bg-neutral-900 dark:text-neutral-100">
         <div className={selectedVideo ? "dark" : ""}>
         <Navbar
           isVideoMode={!!selectedVideo}
@@ -270,25 +270,32 @@ const App: React.FC = () => {
                   <div className="flex justify-between items-start">
                     <h1 className="text-lg">{selectedVideo.title}</h1>
                     <div className="text-neutral-300 flex items-center gap-2">
-                      <a
-                        className="text-neutral-400 hover:cursor-pointer hover:underline"
-                        href={selectedVideo.url}
-                      >
-                        Youtube
-                      </a>
-                      |
-                      <button
-                        className="text-neutral-400 hover:cursor-pointer hover:underline"
-                        onClick={() => onClickEditVideo(selectedVideo)}
-                      >
-                        Edit
-                      </button>
+                    
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <p className="text-neutral-400">
                       {formatSeconds(selectedVideo.duration)}{" "}
                     </p>
+                    /
+  {
+                      !!selectedVideo.url && <><a
+                        className="text-neutral-400 hover:cursor-pointer hover:underline"
+                        href={selectedVideo.url}
+                      >
+                        Source 
+                      </a>
+                      /
+</>
+                      }
+                      
+                      
+                      <button
+                        className="text-neutral-400 hover:cursor-pointer hover:underline"
+                        onClick={() => onClickEditVideo(selectedVideo)}
+                      >
+                        Edit
+                      </button>
                   </div>
                 </div>
               </div>

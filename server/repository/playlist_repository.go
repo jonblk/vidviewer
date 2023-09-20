@@ -18,6 +18,19 @@ func (repo *PlaylistRepository) GetDB() *sql.DB {
 // Cannot be deleted, or modified by user
 var allPlaylist = models.Playlist {ID: 0, Name: "All", Date: "" }
 
+func (repo *PlaylistRepository) Get(id string) (models.Playlist, error) {
+	playlist := models.Playlist{}
+
+	err := repo.GetDB().QueryRow("SELECT * FROM playlists WHERE id = ?", id).Scan(&playlist.ID, &playlist.Name, &playlist.Date)
+
+	if err != nil {
+		log.Println(err.Error())
+		return playlist, err
+	} else {
+		return playlist, nil
+	}
+}
+
 func (repo *PlaylistRepository) Update(id int64, name string) error {
     // Prepare the SQL update statement
 	stmt, err := repo.GetDB().Prepare("UPDATE playlists SET name = ? WHERE id = ?")

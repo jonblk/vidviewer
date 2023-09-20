@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useState } from "react"; import { Video } from "../App";
 import VideoGridItem from "./VideoGridItem";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
+import Spinner from "./Spinner";
 
 interface VideoGridProps {
   playlistId: number;
@@ -16,48 +17,55 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
   const [data, setData] = useState<Video[]>([]);
   const [page, setPage] = useState(1);
 
-  const [, setIsFetching, scrollTriggerRef] = useInfiniteScroll(() => setPage(p=>p+1));
+  const [isFetching, setIsFetching, setHasMore, scrollTriggerRef] = useInfiniteScroll(() => setPage(p=>p+1));
 
-  const fetchVideos = useCallback(async () => {
-    setIsFetching(true)
+  console.log(isFetching)
 
-    if (playlistId === undefined) {
-      throw "Error, playlist_id is undefined";
-    }
+  useEffect(() => {
+    const fetchVideos = async () => {
+      setIsFetching(true)
 
-    try {
-      const response = await fetch(
-        `https://localhost:8000/playlist_videos/${playlistId}?page=${page}&limit=${LIMIT}&search=${search}`
-      );
-      const data = (await response.json()) as Video[];
-
-      if (page > 1) {
-        setData(d => [...d,...data]);
-      } else {
-        setData(data);
+      if (playlistId === undefined) {
+        throw "Error, playlist_id is undefined";
       }
 
-    } catch (e) {
-      console.log(e)
+      try {
+        const response = await fetch(
+          `https://localhost:8000/playlist_videos/${playlistId}?page=${page}&limit=${LIMIT}&search=${search}`
+        );
+
+        const data = (await response.json()) as Video[];
+
+        if (data.length < LIMIT) {
+          setHasMore(false)
+        }
+
+        if (page > 1) {
+          setData(d => [...d,...data]);
+        } else {
+          setData(data);
+        }
+
+      } catch (e) {
+        console.log(e)
+      }
+
+      setIsFetching(false)
     }
 
-    setIsFetching(false)
-  }, [playlistId, page, setIsFetching, search]);
-
-  useEffect(() => {
-      setPage(0)
-  }, [search])
-
-  useEffect(() => {
     console.log("Fetching videos")
-    fetchVideos().catch((e) => console.log(e));
-  }, [fetchVideos]);
+    fetchVideos()
+  }, [playlistId, page, setIsFetching, search, setHasMore]);
+
+  // Reset the page whenever the search value changes
+  useEffect(() => { setHasMore(true); setPage(1)}, [search])
 
   return (
+    <>
     <div className="flex flex-wrap pr-10 pt-2">
-      {data.map((video) => {
-        return (
-          <div key={video.id} className="w-full md:w-1/2 lg:w-1/3 pl-4 mb-12">
+      {
+        data.map((video) => (
+          <div key={video.id} className="w-full md:w-1/2 lg:w-1/3 pl-4 mb-8">
             <VideoGridItem
               {...{
                 ...video,
@@ -66,11 +74,19 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
                 onClickOpenVideo,
               }}
             />
-            <div ref={scrollTriggerRef} id="infinite-scroll-trigger"></div>
           </div>
-        );
-      })}
+        ))
+      }
+      <div ref={scrollTriggerRef} id="infinite-scroll-trigger"></div>
     </div>
+
+    {
+      isFetching && 
+      <div className="flex pt-4 pb-8 justify-center">
+        <Spinner  />
+      </div>
+    }
+    </>
   );
 };
 
