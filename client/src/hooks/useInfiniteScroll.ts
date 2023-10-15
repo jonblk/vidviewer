@@ -15,24 +15,28 @@ const throttle = <F extends (...args: any[]) => any>(func: F, delay: number): ((
 export const useInfiniteScroll = (
   callback: () => void,
   offset = 10
-): [boolean, React.Dispatch<React.SetStateAction<boolean>>, React.Dispatch<React.SetStateAction<boolean>>,RefObject<HTMLDivElement>] => {
+): [number,  React.Dispatch<React.SetStateAction<number>>, boolean, React.Dispatch<React.SetStateAction<boolean>>, React.Dispatch<React.SetStateAction<boolean>>,RefObject<HTMLDivElement>] => {
   const [isFetching, setIsFetching] = useState(false);
   const [hasMore, setHasMore] = useState(true)
+  const [position, setPosition] = useState(0)
 
   const scrollTriggerRef = useRef<HTMLDivElement>(null);
 
-  // Set loading 
+  // On Position change callback
+  
   const handleScroll = useCallback(() => {
+    setPosition(window.scrollY)
+
     if (
       scrollTriggerRef.current &&
-      window.innerHeight + window.pageYOffset >=
+      window.innerHeight + window.scrollY >=
         scrollTriggerRef.current.offsetTop - offset &&
       !isFetching
       && hasMore
     ) {
       callback();
     }
-  }, [isFetching, callback, offset, hasMore]);
+  }, [setPosition, isFetching, callback, offset, hasMore]);
 
   // Add scroll listener to window
   useEffect(() => {
@@ -41,5 +45,5 @@ export const useInfiniteScroll = (
     return () => window.removeEventListener('scroll', throttledCallback);
   }, [handleScroll]);
 
-  return [isFetching, setIsFetching, setHasMore, scrollTriggerRef];
+  return [position, setPosition, isFetching, setIsFetching, setHasMore, scrollTriggerRef];
 };

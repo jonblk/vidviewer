@@ -11,6 +11,10 @@ interface LeftMenuProps {
   onClickOpenNewPlaylistMenu:  () => void;
 }
 
+const resetVideoGridData = () => {
+  localStorage.setItem("videoGridState", "")
+}
+
 const LeftMenu: React.FC<LeftMenuProps> = ({playlists, selectedPlaylist, onClickOpenNewPlaylistMenu, onClickOpenEditPlaylistMenu, setSelectedPlaylist}) => {
   return (
     <div className="pl-10 w-56 h-full fixed top-14 overflow-y-auto">
@@ -32,7 +36,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({playlists, selectedPlaylist, onClick
           <button 
             data-testid={playlist.id}
             className={`hover:cursor-pointer w-full flex items-center gap-1 dark:hover:text-neutral-100 ${playlist.id === selectedPlaylist?.id ? "text-neutral-950  dark:text-neutral-100" : "text-neutral-500 dark:text-neutral-500"}`} 
-            onClick={()=>setSelectedPlaylist(playlist)}>
+            onClick={()=>{resetVideoGridData(); setSelectedPlaylist(playlist)}}>
               {playlist.name.substring(0,17)}
           </button>
 

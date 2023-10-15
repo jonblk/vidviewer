@@ -56,13 +56,8 @@ type WebSocketMessage = {
 const App: React.FC = () => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [modalState, setModalState] = useState<ModalState>(ModalState.none);
-
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist>();
-
   const [isConfigMissing, setIsConfigMissing] = useState<boolean>();
-
-  const [search, setSearch]  = useState("")
-
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
   // Current video that is open
@@ -170,7 +165,10 @@ const App: React.FC = () => {
         isOpen={modalState !== ModalState.none}
       >
         {modalState === ModalState.addVideo && (
-          <AddVideoModal playlists={playlists} onSuccess={()=> setModalState(ModalState.none)}/>
+          <AddVideoModal
+            playlists={playlists}
+            onSuccess={() => setModalState(ModalState.none)}
+          />
         )}
         {modalState === ModalState.addPlaylist && (
           <NewPlaylistForm
@@ -226,15 +224,13 @@ const App: React.FC = () => {
       </Modal>
       <div className="min-h-screen h-fit dark:bg-neutral-900 dark:text-neutral-100">
         <div className={selectedVideo ? "dark" : ""}>
-        <Navbar
-          isVideoMode={!!selectedVideo}
-          toggleTheme={toggleDarkMode}
-          isDarkMode={darkMode}
-          openAddVideoMenu={onClickAddVideo}
-          openConfigMenu={() => setModalState(ModalState.config)}
-          search = {search}
-          handleSearchChange={(v: string) => setSearch(v)}
-        /></div>
+          <Navbar
+            toggleTheme={toggleDarkMode}
+            isDarkMode={darkMode}
+            openAddVideoMenu={onClickAddVideo}
+            openConfigMenu={() => setModalState(ModalState.config)}
+          />
+        </div>
         {!selectedVideo && (
           <LeftMenu
             onClickOpenEditPlaylistMenu={onClickEditPlaylist}
@@ -255,7 +251,6 @@ const App: React.FC = () => {
                 playlistId={selectedPlaylist.id}
                 onClickEditVideo={onClickEditVideo}
                 onClickOpenVideo={setSelectedVideo}
-                search={search.length >= 2 ? search : ""}
               />
             )
           ) : (
@@ -269,33 +264,30 @@ const App: React.FC = () => {
                 <div className="w-[55%] pt-4 py-10">
                   <div className="flex justify-between items-start">
                     <h1 className="text-lg">{selectedVideo.title}</h1>
-                    <div className="text-neutral-300 flex items-center gap-2">
-                    
-                    </div>
+                    <div className="text-neutral-300 flex items-center gap-2"></div>
                   </div>
                   <div className="flex items-center gap-2">
                     <p className="text-neutral-400">
                       {formatSeconds(selectedVideo.duration)}{" "}
                     </p>
                     /
-  {
-                      !!selectedVideo.url && <><a
-                        className="text-neutral-400 hover:cursor-pointer hover:underline"
-                        href={selectedVideo.url}
-                      >
-                        Source 
-                      </a>
-                      /
-</>
-                      }
-                      
-                      
-                      <button
-                        className="text-neutral-400 hover:cursor-pointer hover:underline"
-                        onClick={() => onClickEditVideo(selectedVideo)}
-                      >
-                        Edit
-                      </button>
+                    {!!selectedVideo.url && (
+                      <>
+                        <a
+                          className="text-neutral-400 hover:cursor-pointer hover:underline"
+                          href={selectedVideo.url}
+                        >
+                          Source
+                        </a>
+                        /
+                      </>
+                    )}
+                    <button
+                      className="text-neutral-400 hover:cursor-pointer hover:underline"
+                      onClick={() => onClickEditVideo(selectedVideo)}
+                    >
+                      Edit
+                    </button>
                   </div>
                 </div>
               </div>
