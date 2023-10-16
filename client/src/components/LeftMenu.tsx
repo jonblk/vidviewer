@@ -1,7 +1,8 @@
 import React from 'react';
 import {  FiEdit3 } from 'react-icons/fi';
-import { IoIosAdd, IoIosAnalytics, IoIosSettings } from 'react-icons/io';
+import { IoIosAdd } from 'react-icons/io';
 import { Playlist } from '../App';
+import { resetVideoGridData } from './VideoGrid';
 
 interface LeftMenuProps {
   playlists: Playlist[];
@@ -11,9 +12,6 @@ interface LeftMenuProps {
   onClickOpenNewPlaylistMenu:  () => void;
 }
 
-const resetVideoGridData = () => {
-  localStorage.setItem("videoGridState", "")
-}
 
 const LeftMenu: React.FC<LeftMenuProps> = ({playlists, selectedPlaylist, onClickOpenNewPlaylistMenu, onClickOpenEditPlaylistMenu, setSelectedPlaylist}) => {
   return (

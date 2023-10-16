@@ -72,10 +72,12 @@ func GetVideosFromPlaylist(w http.ResponseWriter, r *http.Request) {
 
 	like := queryParams.Get("search") 
 
+	sortBy, _ := strconv.ParseUint(queryParams.Get("sortBy"), 10, 0)
+
 	page, _ := strconv.ParseUint(pageStr, 10, 0)
 	limit, _ := strconv.ParseUint(limitStr, 10, 0)
 
-	videos, err := repo.GetFromPlaylist(playlistID, uint(limit), uint(page), like)
+	videos, err := repo.GetFromPlaylist(playlistID, uint(limit), uint(page), like, uint(sortBy))
 
 	if (err != nil) {
 		log.Println(err)

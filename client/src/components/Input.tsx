@@ -13,7 +13,7 @@ interface InputProps {
 }
 
 const Input: React.FC<InputProps> = ({ label, onFocus, onBlur, type, id, value, onChange, transparent=false }) => {
-  const bg = transparent ? "bg-transparent" : "dark:bg-neutral-700"
+  const bg = transparent ? "bg-transparent" : "dark:bg-neutral-900"
   return (
     <div className="relative">
     <input

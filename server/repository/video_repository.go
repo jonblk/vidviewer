@@ -137,8 +137,8 @@ func (repo *VideoRepository) Delete(id string) error {
 	}
 }
 
-// Returns all videos according to: playlist, limit, and page number
-func (repo *VideoRepository) GetFromPlaylist(playlistID string, limit uint, page uint, like string) ([]models.Video, error) {
+// Returns all videos belonging to playlist
+func (repo *VideoRepository) GetFromPlaylist(playlistID string, limit uint, page uint, like string, sortBy uint) ([]models.Video, error) {
     var query string
 	var rows *sql.Rows
 	var err error
@@ -151,13 +151,19 @@ func (repo *VideoRepository) GetFromPlaylist(playlistID string, limit uint, page
         likeQuery = fmt.Sprintf(" AND title LIKE '%%%s%%'", like)
 	}
 
+	var sort = "ASC"
+
+	if sortBy == 0 {
+		sort = "DESC"
+	} 
+
 	if (ALL_PLAYLIST_ID != playlistID) {
 		query = `
 		SELECT v.*
 		FROM videos AS v
 		JOIN playlist_videos AS pv ON v.id = pv.video_id
 		WHERE pv.playlist_id = ? AND download_complete = 1` + likeQuery + `	
-		ORDER BY id ASC
+		ORDER BY id ` + sort + `
         LIMIT ? 
 		OFFSET ?
 	    `
@@ -166,7 +172,7 @@ func (repo *VideoRepository) GetFromPlaylist(playlistID string, limit uint, page
 		query = `
 		SELECT * FROM videos 
 		WHERE download_complete = 1` + likeQuery + ` 
-		ORDER BY id ASC
+		ORDER BY id ` + sort + `
         LIMIT ? 
 		OFFSET ?
 		`
