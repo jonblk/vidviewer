@@ -50,7 +50,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
 
   return (
     <form className="">
-      <div className="mb-4">
+      {!pendingDelete && <div className="mb-4">
         <Label htmlFor="playlist-name">
           Playlist name
         </Label>
@@ -61,17 +61,18 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
           value={name ? name : ""}
           onChange={(event) => setName(event.target.value)}
         />
-      </div>
+      </div> }
+
       <div className="flex flex-col gap-3 ">
         {/* Update button */}
-        <Button
+        {!pendingDelete && <Button
           dataTestid="update-playlist"
           color="primary"
           type="submit"
           onClick={(e: React.FormEvent<Element>) => {handleSubmit(e).catch(e=>console.log(e))}}
         >
           Update
-        </Button>
+        </Button> }
 
         {!pendingDelete && 
         <Button

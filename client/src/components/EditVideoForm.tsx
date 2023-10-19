@@ -70,8 +70,25 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
   };
 
   return (
-    <form className="">
-      <div className="mb-4 flex flex-col gap-4">
+    <form className="relative max-h-[330px] min-h-[280px]">
+   {pendingDelete && (
+          <div className="flex flex-col gap-3">
+            Delete this video?  
+            <p className="text-neutral-400">
+            "{title}"</p>
+            <Button
+              type="submit"
+              color="neutral"
+              onClick={() => setPendingDelete(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" color="danger" onClick={handleDelete}>
+              Delete 
+            </Button>
+          </div>
+        )}
+      {!pendingDelete && <div className="flex flex-col gap-3 overflow-auto h-[90%]">
         <div>
           <Label htmlFor="title">Video title</Label>
           <Input
@@ -102,36 +119,25 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
           />
         </div>
       </div>
-      <div className="flex flex-col gap-3 ">
-        <Button color="primary" type="submit" onClick={handleSubmit}>
-          Update
-        </Button>
+}
 
-        {!pendingDelete && (
-          <Button
-            type="submit"
+      <div className="flex flex-col gap-3 w-[100%]  dark:bg-neutral-800 absolute bottom-0">
+
+{!pendingDelete && (
+          <p
             color="neutral"
+            className="hover:cursor-pointer w-4 hover:text-red-500 underline"
             onClick={() => setPendingDelete(true)}
           >
             Delete
-          </Button>
+          </p>
         )}
 
-        {pendingDelete && (
-          <>
-            Delete this video?
-            <Button
-              type="submit"
-              color="neutral"
-              onClick={() => setPendingDelete(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" color="danger" onClick={handleDelete}>
-              Delete '{title}'
-            </Button>
-          </>
-        )}
+    
+  {!pendingDelete && <Button color="primary" type="submit" onClick={handleSubmit}>
+          Update
+        </Button> }
+        
       </div>
     </form>
   );

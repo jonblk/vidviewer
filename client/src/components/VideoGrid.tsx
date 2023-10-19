@@ -171,9 +171,10 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
       /></div>
     </div>
     <div className="flex flex-wrap pr-10 pt-2">
+      { /* Render video thumbnails */ }
       {
         data.map((video) => (
-          <div key={video.id} className="w-full md:w-1/2 lg:w-1/3 pl-4 mb-8">
+          <div key={video.id} className="w-full pl-4 md:w-1/2 lg:w-1/4 mb-8">
             <VideoGridItem
               {...{
                 ...video,
@@ -184,6 +185,14 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
             />
           </div>
         ))
+      }
+
+      {/* Show message if seach input returns no results */ }
+      {
+        (data.length === 0 && search.length > 1) &&
+        <p className="pl-4">
+          No videos found: <span className="text-neutral-400">"{search}"</span>
+        </p>
       }
       <div ref={scrollTriggerRef} id="infinite-scroll-trigger"></div>
     </div>

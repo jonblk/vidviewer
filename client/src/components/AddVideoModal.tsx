@@ -157,7 +157,7 @@ export default function AddVideoModal({
   );
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 ">
       {
       errors.length > 0 && <div className="text-red-500">
         <p className="font-bold">Error{errors.length > 1 ? "s" : ""}: </p>
