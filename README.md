@@ -3,7 +3,7 @@
 Vidviewer is a simple way to organize, download and watch videos on your computer.  
 Run from a Go binary + web browser. 
 
-![file-light](https://github.com/jonblk/vidviewer/assets/132053602/e9d5f58d-4675-4202-96fc-d10c837a872d)
+![screenshot](https://github.com/jonblk/vidviewer/assets/132053602/be7ed870-3b2d-4431-9bb4-aea0ac344a19)
 
 ## Features
 
