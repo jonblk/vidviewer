@@ -1,8 +1,9 @@
 # vidviewer 
  
 Vidviewer is a simple way to organize, download and watch videos on your computer.  
+Run from a Go binary + web browser. 
 
-![file](https://github.com/jonblk/vidviewer/assets/132053602/2e3477c1-0e8d-437b-b06e-e5bbdab1df18)
+![file-light](https://github.com/jonblk/vidviewer/assets/132053602/e9d5f58d-4675-4202-96fc-d10c837a872d)
 
 ## Features
 
@@ -15,7 +16,7 @@ Vidviewer is a simple way to organize, download and watch videos on your compute
 ## Requirements
 
 The following should be preinstalled:
-- [mkcert](https://github.com/FiloSottile/mkcert)  For local SSL connections
+- [mkcert](https://github.com/FiloSottile/mkcert)  (for local SSL connections)
 - ffmpeg 
 - yt-dlp 
 
