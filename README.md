@@ -1,22 +1,21 @@
 # vidviewer 
  
-Vidviewer is a simple way to download, organize, and watch your [yt-dlp](https://github.com/yt-dlp/yt-dlp) videos.  
+Vidviewer is a simple way to organize, download and watch videos on your computer.  
 
-Run locally from a go binary.  
+![file](https://github.com/jonblk/vidviewer/assets/132053602/2e3477c1-0e8d-437b-b06e-e5bbdab1df18)
 
-![vidviewer](https://github.com/jonblk/vidviewer/assets/132053602/571abe64-ef30-407f-9b93-55b0f3db22f1)
 ## Features
 
+- Download videos with ytp  
 - Dark/light mode
 - Import videos from disk (webm, mp4)
-- Download videos with ytp  
 - Search videos
-- Playlists
+- Create playlists
 
 ## Requirements
 
 The following should be preinstalled:
-- [mkcert](https://github.com/FiloSottile/mkcert) 
+- [mkcert](https://github.com/FiloSottile/mkcert)  For local SSL connections
 - ffmpeg 
 - yt-dlp 
 
@@ -40,22 +39,8 @@ To compile:
 
 ## Current Implementation
 
-Videos are given a random file_id and are saved in the following structure in the file system: rootFolder/files/ab/cd/ef/abcdefghijkl.mp4. Thumbnail images are also saved in this manner in the same directory (abcdefghijkl.jpg).  
+The user selects a `rootFolder` which gets populated with an sqlite database, a `files` folder (for videos and thumbnails) and a `temp` folder for in-progress downloads.
 
-The rootFolder also contains the sqlite database and a temp folder for in-progress downloads.
-
-## TODO 
+Videos are given a random file_id and are saved in the following structure: `rootFolder/files/ab/cd/ef/abcdefghijkl.mp4`. Thumbnail images are also saved in this manner in the same directory `rootFolder/files/ab/cd/ef/abcdefghijkl.jpg`.  
 
  
-- download progress widget with 'cancel download' option 
-- user login? 
-- file format options? (currently it defaults to mp4) 
-- export videos 
-- improve react performance
-- <s>search function</s>
-- <s>import video files from disk</s>
-- <s>SSL</s>
-- <s>infinite scroll </s>
-- <s>'all videos' view option</s>
-- <s>video resolution options</s>
-- <s>error messages if ffmpeg and yt-dlp not found on system</s>
