@@ -7,7 +7,7 @@ interface GridItemProps {
   video: Video;
   title: string;
   duration: string;
-  onClickOpenVideo: React.Dispatch<React.SetStateAction<Video | undefined>>;
+  onClickOpenVideo: (v: Video) => void;
   onClickEditVideo: (video: Video) => void
 }
 

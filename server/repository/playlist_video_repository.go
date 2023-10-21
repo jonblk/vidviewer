@@ -23,13 +23,13 @@ func (repo *PlaylistVideoRepository) Get(playlist_id string, video_id string) (i
 }
 
 func (repo *PlaylistVideoRepository) Create(playlist_id string, video_id string) (int64, error) {
-  query := "INSERT INTO playlist_videos (playlist_id, video_id) VALUES (?, ?)"
+	query := "INSERT INTO playlist_videos (playlist_id, video_id) VALUES (?, ?)"
 
-  result, err := repo.GetDB().Exec(query, playlist_id, video_id)
+	result, err := repo.GetDB().Exec(query, playlist_id, video_id)
 
-  if err != nil {
-    return -1, err
-  }
+	if err != nil {
+		return -1, err
+	}
 
 	id, err := result.LastInsertId()
 
@@ -40,15 +40,18 @@ func (repo *PlaylistVideoRepository) Create(playlist_id string, video_id string)
 	return id, nil
 }
 
-func (repo *PlaylistVideoRepository) Delete(playlist_id string, video_id string) error {
+func (repo *PlaylistVideoRepository) Delete(playlist_id string, video_id string) error{
+	stmt, _ := repo.GetDB().Prepare("DELETE FROM playlist_videos WHERE playlist_id = ? AND video_id = ? ")
+	defer stmt.Close()
+	_, err := stmt.Exec(playlist_id, video_id)
+	return err
+}
+
+func (repo *PlaylistVideoRepository) OnDeletePlaylist(playlist_id string) error {
 	var stmt *sql.Stmt
 	var err error
 
-	if (playlist_id == "") {
-	  stmt, err = repo.GetDB().Prepare("DELETE FROM playlist_videos WHERE video_id = ?")
-	} else {
-	  stmt, err = repo.GetDB().Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
-	}
+    stmt, err = repo.GetDB().Prepare("DELETE FROM playlist_videos WHERE playlist_id = ?")
 
 	if err != nil {
 		return err
@@ -56,11 +59,7 @@ func (repo *PlaylistVideoRepository) Delete(playlist_id string, video_id string)
 
 	defer stmt.Close()
 
-	if (playlist_id == "") {
-	  _, err = stmt.Exec(video_id)
-	} else {
-	  _, err = stmt.Exec(playlist_id)
-	}
+	_, err = stmt.Exec(playlist_id)
 
 	if err != nil {
 		return err
@@ -69,3 +68,23 @@ func (repo *PlaylistVideoRepository) Delete(playlist_id string, video_id string)
 	return nil
 }
 
+func (repo *PlaylistVideoRepository) OnDeleteVideo(video_id string) error {
+	var stmt *sql.Stmt
+	var err error
+
+    stmt, err = repo.GetDB().Prepare("DELETE FROM playlist_videos WHERE video_id = ?")
+
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(video_id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

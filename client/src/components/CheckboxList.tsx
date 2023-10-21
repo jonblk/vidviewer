@@ -11,7 +11,7 @@ interface CheckboxListProps<T> {
 
 const CheckboxList = <T,>({ options, onSelectionChange }: CheckboxListProps<T>) => {
   return (
-    <div className="flex flex-col max-h-28 overflow-auto">
+    <div className="flex flex-col">
       {options.map((option, index) => (
         <label key={index} className="inline-flex items-center ">
           <input

@@ -29,25 +29,6 @@ type VideoPlaylist struct {
 	Name    string `json:"name"`
 }
 
-func UpdateVideoPlaylists(repo repository.PlaylistVideoRepository, videoID string, playlists []VideoPlaylist) {
-    for _, playlist := range playlists {
-		id := fmt.Sprint(playlist.ID)
-		_, err := repo.Get(id, videoID)
-
-		if !playlist.Checked {
-			// Delete if it exists
-			if (err == nil) {
-				repo.Delete(id, videoID)
-			}
-		} else {
-			//  Create if it doesn't exist
-			if (err != nil) {
-				repo.Create(id, videoID)
-			}
-		}
-	}
-}
-
 func GetAllPlaylists(w http.ResponseWriter, r *http.Request) {
 	repo := getPlaylistRepo(r)
 
@@ -147,7 +128,7 @@ func DeletePlaylist(w http.ResponseWriter, r *http.Request) {
 	// Get the playlist ID from the request URL parameters
 	id := mux.Vars(r)["id"]
 
-	err := playlistVideoRepo.Delete(id, "")
+	err := playlistVideoRepo.OnDeletePlaylist(id)
 
 	if err != nil {
 		http.Error(w, "Failed to delete playlistvideos", http.StatusInternalServerError)

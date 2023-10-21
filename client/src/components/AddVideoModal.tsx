@@ -184,6 +184,7 @@ export default function AddVideoModal({
           <div>
             <Label htmlFor="url">URL</Label>
             <Input
+              autoFocus={true}
               label="Enter url for video"
               type="text"
               id="url"
@@ -237,6 +238,7 @@ export default function AddVideoModal({
       <div>
         <Label htmlFor="playlist">Playlist</Label>
         <Dropdown
+          selected={{label: playlists[1].name, value: playlists[1].id}}
           disabled={false}
           isFetching={false}
           options={playlists
@@ -247,6 +249,8 @@ export default function AddVideoModal({
           onSelect={handlePlaylistChange}
         />
       </div>
+
+      <br />
 
       {/* Submit button*/}
       <Button

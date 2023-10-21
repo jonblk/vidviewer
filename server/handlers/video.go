@@ -33,7 +33,6 @@ import (
 
 type VideoUpdate struct {
 	Title string `json:"title"`
-	Playlists []VideoPlaylist `json:"videoPlaylists"`
 }
 
 func computeChecksum(filePath string) (string, error) {
@@ -97,7 +96,6 @@ func GetVideosFromPlaylist(w http.ResponseWriter, r *http.Request) {
 
 func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 	videoRepo := getVideoRepository(r)
-	playlistVideoRepo := getPlaylistVideoRepository(r)
 
 	// Retrieve the ID parameter from the request URL
 	vars := mux.Vars(r)
@@ -121,9 +119,6 @@ func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	video.Title = videoUpdate.Title
-
-	// Update the playlistVideo table
-	UpdateVideoPlaylists(playlistVideoRepo, id, videoUpdate.Playlists)
 
 	err = videoRepo.Update(video)
 
@@ -166,7 +161,7 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete playlist_videos that have the video id 
-	err = playlistVideoRepo.Delete("", id)
+	err = playlistVideoRepo.OnDeleteVideo(id)
 
     if err != nil {
 		// Return a 500 Internal Server Error response

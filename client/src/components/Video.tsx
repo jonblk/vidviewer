@@ -2,10 +2,12 @@ import React, { useRef, useState, useEffect } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiPause, FiPlay } from 'react-icons/fi';
 import { Video } from '../App';
+import { formatSeconds } from '../util';
 
 interface VideoPlayerProps {
-  videoId: number;
-  setSelectedVideo: (v: Video | undefined) => void;
+  video: Video;
+  onClose: () => void;
+  onClickEditVideo: (v: Video) => void
 }
 
 type VideoControls = {
@@ -13,12 +15,12 @@ type VideoControls = {
   muted: boolean;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId, setSelectedVideo }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose, onClickEditVideo }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleBackButtonClick = () => {
-    setSelectedVideo(undefined);
+    onClose(undefined);
   };
 
   const handlePlayToggle = () => {
@@ -32,7 +34,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId, setSelectedVideo }) 
     }
   };
 
-  const videoUrl = `https://localhost:8000/videos/${videoId}`
+  const videoUrl = `https://localhost:8000/videos/${video.id}`
 
   // Load/Save {volume, muted} from/to localstorage
   useEffect(()=> {
@@ -60,6 +62,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId, setSelectedVideo }) 
   },[])
 
   return (
+    <div className="w-full flex flex-col">
     <div className="w-full relative bg-black flex justify-center">
       <video
         autoPlay={true}
@@ -84,6 +87,40 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId, setSelectedVideo }) 
               {isPlaying ? <FiPause size="3rem" /> : <FiPlay size="3rem" />}
             </button>
           )}
+        </div>
+      </div>
+      </div>
+
+      {/* Video Info */}
+      <div className="w-full flex justify-center">
+        <div className="w-[55%] pt-4 py-10">
+          <div className="flex justify-between items-start">
+            <h1 className="text-lg">{video.title}</h1>
+            <div className="text-neutral-300 flex items-center gap-2"></div>
+          </div>
+          <div className="flex items-center gap-2">
+            <p className="text-neutral-400">
+              {formatSeconds(video.duration)}{" "}
+            </p>
+            /
+            {!!video.url && (
+              <>
+                <a
+                  className="text-neutral-400 hover:cursor-pointer hover:underline"
+                  href={video.url}
+                >
+                  Source
+                </a>
+                /
+              </>
+            )}
+            <button
+              className="text-neutral-400 hover:cursor-pointer hover:underline"
+              onClick={() => onClickEditVideo(video)}
+            >
+              Edit
+            </button>
+          </div>
         </div>
       </div>
     </div>

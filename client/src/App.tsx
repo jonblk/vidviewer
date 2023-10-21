@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import LeftMenu from './components/LeftMenu';
-import VideoGrid from './components/VideoGrid';
+import VideoGrid, { getGridState, saveGridState } from './components/VideoGrid';
 import Video from './components/Video';
 import Modal from './components/Modal';
 import EditPlaylistForm from './components/EditPlaylistForm';
 import NewPlaylistForm from './components/NewPlaylistForm';
 import EditVideoForm from './components/EditVideoForm';
-import { formatSeconds } from './util';
 import { useDarkMode } from './hooks/useDarkMode';
 import { useWebSocket } from 'react-use-websocket/dist/lib/use-websocket';
 import { useEvent } from './hooks/useEvent';
@@ -26,7 +25,21 @@ export interface Video {
   thumbnail_path: string;
   title: string;
   duration: string;
-  url: string
+  url: string;
+  removed: boolean  // track whether user deletes or removes it from playlist
+}
+
+export enum VideoUpdateType {
+  REMOVE_FROM_PLAYLIST,
+  DELETE,
+  ADD_TO_PLAYLIST,
+  UPDATE_PROPERTY
+}
+
+export type VideoUpdateProps = {
+  type: VideoUpdateType
+  title: string 
+  id: number
 }
 
 enum ModalState {
@@ -58,7 +71,8 @@ const App: React.FC = () => {
   const [modalState, setModalState] = useState<ModalState>(ModalState.none);
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist>();
   const [isConfigMissing, setIsConfigMissing] = useState<boolean>();
-  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Current video that is open
   const [selectedVideo, setSelectedVideo] = useState<Video>();
@@ -71,6 +85,9 @@ const App: React.FC = () => {
 
   // Set the dark/light visual mode
   const [darkMode, toggleDarkMode] = useDarkMode();
+
+  // Playlist Videos
+  const [playlistVideos, setPlaylistVideos] = useState<Video[]>([])
 
   // Establish websocket connection
   const { lastMessage, readyState } = useWebSocket(
@@ -122,7 +139,7 @@ const App: React.FC = () => {
   const onVideoDownloadSuccess = useEvent(() => {
     // Update the UI
     if (selectedPlaylist) {
-      setLastUpdate(Date.now())
+      //setLastUpdate(Date.now())
       //fetchPlaylistVideos(selectedPlaylist.id).catch((e) => console.log(e));
     }
   });
@@ -155,6 +172,7 @@ const App: React.FC = () => {
 
   return (
     <>
+      {/* MODAL */}
       <Modal
         isLocked={
           isConfigMissing ||
@@ -191,10 +209,61 @@ const App: React.FC = () => {
             allPlaylists={playlists.slice(1)} /* remove 'ALL' from playlists */
             id={selectedVideoEdit.id}
             initialTitle={selectedVideoEdit.title}
-            onSuccess={() => {
-              setLastUpdate(Date.now());
-              setModalState(ModalState.none);
-              return Promise.resolve();
+            // When user updates the video details, update the local state on the client
+            onSuccess={(videoUpdate: VideoUpdateProps) => {
+              let vids;
+              switch (videoUpdate.type) {
+                case VideoUpdateType.ADD_TO_PLAYLIST:
+                  vids = playlistVideos.map((v) => {
+                    if (v.id === videoUpdate.id) {
+                      return { ...v, removed: false };
+                    } else {
+                      return v;
+                    }
+                  });
+                  setPlaylistVideos(vids);
+                  break;
+                case VideoUpdateType.REMOVE_FROM_PLAYLIST:
+                  vids = playlistVideos.map((v) => {
+                    if (v.id === videoUpdate.id) {
+                      return { ...v, removed: true };
+                    } else {
+                      return v;
+                    }
+                  });
+                  setPlaylistVideos(vids);
+                  break;
+                case VideoUpdateType.DELETE:
+                  vids = playlistVideos.map((v) => {
+                    if (v.id === videoUpdate.id) {
+                      return { ...v, removed: true };
+                    } else {
+                      return v;
+                    }
+                  });
+                  setPlaylistVideos(vids);
+                  break;
+                case VideoUpdateType.UPDATE_PROPERTY:
+                  vids = playlistVideos.map((v) => {
+                    if (v.id === videoUpdate.id) {
+                      if (selectedVideo) {
+                        setSelectedVideo({ ...v, title: videoUpdate.title });
+                      }
+                      return { ...v, title: videoUpdate.title };
+                    } else {
+                      return v;
+                    }
+                  });
+                  setPlaylistVideos(vids);
+                  break;
+              }
+
+              // If necessary update the local storage
+              const storage = getGridState();
+              if (storage && storage.videos.length > 0) {
+                storage.videos = vids;
+                saveGridState(storage);
+              }
             }}
           />
         )}
@@ -222,6 +291,7 @@ const App: React.FC = () => {
           </div>
         )}
       </Modal>
+
       <div className="min-h-screen h-fit dark:bg-neutral-900 dark:text-neutral-100">
         <div className={selectedVideo ? "dark" : ""}>
           <Navbar
@@ -231,7 +301,7 @@ const App: React.FC = () => {
             openConfigMenu={() => setModalState(ModalState.config)}
           />
         </div>
-        {!selectedVideo && (
+        {!isPlaying && (
           <LeftMenu
             onClickOpenEditPlaylistMenu={onClickEditPlaylist}
             onClickOpenNewPlaylistMenu={onClickNewPlaylist}
@@ -239,59 +309,33 @@ const App: React.FC = () => {
             selectedPlaylist={selectedPlaylist}
             setSelectedPlaylist={(p: Playlist) => {
               setSelectedPlaylist(p);
-              setLastUpdate(Date.now());
+              //setLastUpdate(Date.now());
             }}
           />
         )}
         <main className={"pt-14" + (selectedVideo ? "" : " pl-60")}>
-          {!selectedVideo ? (
-            selectedPlaylist && (
-              <VideoGrid
-                key={lastUpdate} // unmount when updated so the videos/page are reset
-                playlistId={selectedPlaylist.id}
-                onClickEditVideo={onClickEditVideo}
-                onClickOpenVideo={setSelectedVideo}
-              />
-            )
-          ) : (
-            <div className="flex flex-col w-full">
-              <Video
-                setSelectedVideo={setSelectedVideo}
-                videoId={selectedVideo.id}
-              />
-              {/* Video Info */}
-              <div className="w-full flex justify-center">
-                <div className="w-[55%] pt-4 py-10">
-                  <div className="flex justify-between items-start">
-                    <h1 className="text-lg">{selectedVideo.title}</h1>
-                    <div className="text-neutral-300 flex items-center gap-2"></div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-neutral-400">
-                      {formatSeconds(selectedVideo.duration)}{" "}
-                    </p>
-                    /
-                    {!!selectedVideo.url && (
-                      <>
-                        <a
-                          className="text-neutral-400 hover:cursor-pointer hover:underline"
-                          href={selectedVideo.url}
-                        >
-                          Source
-                        </a>
-                        /
-                      </>
-                    )}
-                    <button
-                      className="text-neutral-400 hover:cursor-pointer hover:underline"
-                      onClick={() => onClickEditVideo(selectedVideo)}
-                    >
-                      Edit
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+          {!isPlaying && selectedPlaylist && (
+            <VideoGrid
+              videos={playlistVideos}
+              setVideos={setPlaylistVideos}
+              playlistId={selectedPlaylist.id}
+              onClickEditVideo={onClickEditVideo}
+              onClickOpenVideo={(v: Video) => {
+                setIsPlaying(true);
+                setSelectedVideo(v);
+              }}
+            />
+          )}
+
+          {isPlaying && selectedVideo && (
+            <Video
+              onClose={() => {
+                setSelectedVideo(undefined);
+                setIsPlaying(false);
+              }}
+              video={selectedVideo}
+              onClickEditVideo={onClickEditVideo}
+            />
           )}
         </main>
       </div>

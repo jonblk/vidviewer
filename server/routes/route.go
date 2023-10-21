@@ -111,6 +111,13 @@ func Initialize(assets embed.FS, htmlFiles embed.FS, repositories *repository.Re
 	Router.HandleFunc("/playlists/{id}", handlers.UpdatePlaylist).Methods("PUT")
 	Router.HandleFunc("/playlists/{id}", handlers.DeletePlaylist).Methods("DELETE")
 
+	Router.HandleFunc("/video/{id}/playlists", handlers.GetVideoPlaylists).Methods("GET")
+
+	// PLAYLISTVIDEOS
+	Router.HandleFunc("/playlist_videos", handlers.DeletePlaylistVideo).Methods("DELETE")
+	Router.HandleFunc("/playlist_videos", handlers.CreatePlaylistVideo).Methods("POST")
+	
+
 	// VIDEOS 
 	Router.HandleFunc("/videos", handlers.CreateVideo).Methods("POST")
 	Router.HandleFunc("/videos/{id}", handlers.GetVideo).Methods("GET")
@@ -118,8 +125,7 @@ func Initialize(assets embed.FS, htmlFiles embed.FS, repositories *repository.Re
 	Router.HandleFunc("/videos/{id}", handlers.DeleteVideo).Methods("DELETE")
 	Router.HandleFunc("/video_formats", handlers.GetVideoFormats).Methods("GET")
 
-	Router.HandleFunc("/playlist_videos/{id}", handlers.GetVideosFromPlaylist).Methods("GET")
-	Router.HandleFunc("/video_playlists/{id}", handlers.GetVideoPlaylists).Methods("GET")
+	Router.HandleFunc("/playlist/{id}/videos", handlers.GetVideosFromPlaylist).Methods("GET")
 
 	return Router
 }

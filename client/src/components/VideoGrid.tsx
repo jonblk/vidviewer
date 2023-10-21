@@ -7,7 +7,9 @@ import Dropdown  from "./Dropdown";
 
 interface VideoGridProps {
   playlistId: number;
-  onClickOpenVideo: React.Dispatch<React.SetStateAction<Video | undefined>>;
+  videos: Video[];
+  setVideos: (videos: Video[]) => void;
+  onClickOpenVideo: (v: Video) => void;
   onClickEditVideo: (video: Video) => void
 }
 
@@ -17,28 +19,28 @@ const LIMIT = 25
 const sortOptions = [{label: "Latest", value: 0}, {label: "Oldest", value: 1}]
 
 interface VideoGridState {
-  data: Video[],
+  videos: Video[],
   page: number,
   search: string,
   position: number
   sortBy: number 
 }
 
-const saveGridState = (state: VideoGridState) => {
+export const saveGridState = (state: VideoGridState) => {
   localStorage.setItem("videoGridState", JSON.stringify(state));
 }
 
 export const resetVideoGridData = () => {
   const state =  getGridState()
   if (state) {
-    state.data = [];
+    state.videos = [];
     state.page = 1;
     state.position = 0;
     localStorage.setItem("videoGridState", JSON.stringify(state))
   }
 }
 
-const getGridState = () => {
+export const getGridState = () => {
   const state = localStorage.getItem("videoGridState");
   if (state) {
     try {
@@ -55,8 +57,7 @@ const getGridState = () => {
    Displays the videos belonging to a playlist.
    When a video is clicked, the videoGrid state is saved to localStorage. 
 */
-const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onClickEditVideo}) => {
-  const [data, setData] = useState<Video[]>([]);
+const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, onClickOpenVideo, onClickEditVideo}) => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState(0)
@@ -75,7 +76,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
     setPage(1)
     setPosition(0)
     setHasMore(true);
-    saveGridState({ data, sortBy: value, page: 1, search, position: 0})
+    saveGridState({ videos, sortBy: value, page: 1, search, position: 0})
     fetchVideos(1, search, value).catch(e => console.log(e))
      window.scrollTo(0, savedPosition)
   }
@@ -88,7 +89,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
       setHasMore(true);
       fetchVideos(1, text, sortBy).catch(e => console.log(e))
     }
-    saveGridState({ data, sortBy, page, search: text, position})
+    saveGridState({ videos, sortBy, page, search: text, position})
   }
 
   const fetchVideos = useCallback(async (page: number, search: string, sortBy: number) => {
@@ -96,7 +97,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
 
     try {
       const response = await fetch(
-        `https://localhost:8000/playlist_videos/${playlistId}?page=${page}&limit=${LIMIT}&search=${search}&sortBy=${sortBy}`
+        `https://localhost:8000/playlist/${playlistId}/videos?page=${page}&limit=${LIMIT}&search=${search}&sortBy=${sortBy}`
       );
 
       const data = (await response.json()) as Video[];
@@ -106,16 +107,16 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
       }
 
       if (page > 1) {
-        setData((d) => [...d, ...data]);
+        setVideos(videos => [...videos, ...data]);
       } else {
-        setData(data);
+        setVideos(data);
       }
     } catch (e) {
       console.log(e);
     } finally {
       setIsFetching(false);
     }
-  }, [playlistId, setHasMore, setData, setIsFetching])
+  }, [playlistId, setHasMore, setVideos, setIsFetching])
   
   // Scroll to previous position
   // Use 'savedPosition' to avoid calling scrollTo everytime the user scrolls
@@ -130,7 +131,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
     const savedState = getGridState();
     
     if (savedState) {
-      setData(savedState.data)
+      setVideos(savedState.videos)
       setSearch(savedState.search)
       setPage(savedState.page)
       setPosition(savedState.position)
@@ -138,18 +139,18 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
       setSortBy(savedState.sortBy)
     } 
 
-    if (savedState && savedState.data.length === 0) {
+    if (savedState && savedState.videos.length === 0) {
       fetchVideos(1, savedState.search, savedState.sortBy).catch(e=>console.log(e))
     }
 
     if (!savedState) {
       fetchVideos(1, "", sortBy).catch(e=>console.log(e))
     }
-  }, [fetchVideos, setData, setSearch, setPage, setPosition, setSavedPosition])
+  }, [fetchVideos, setVideos, setSearch, setPage, setPosition, setSavedPosition])
 
   return (
     <>
-    <div className="fixed top-0 w-[340px] z-20 p-2 ml-2 flex gap-3">
+    <div className="fixed top-0 w-[380px] z-20 p-2 ml-2 flex gap-3">
       <div className="">
       <Input
         type="search"
@@ -173,14 +174,14 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
     <div className="flex flex-wrap pr-10 pt-2">
       { /* Render video thumbnails */ }
       {
-        data.map((video) => (
-          <div key={video.id} className="w-full pl-4 md:w-1/2 lg:w-1/4 mb-8">
+        videos.map((video) => (
+            !video.removed && <div key={video.id} className="w-full pl-4 md:w-1/2 lg:w-1/4 mb-8">
             <VideoGridItem
               {...{
                 ...video,
                 video: video,
                 onClickEditVideo,
-                onClickOpenVideo: v =>{ saveGridState({ data, sortBy, page, search, position}); onClickOpenVideo(v)},
+                onClickOpenVideo: v =>{ saveGridState({ videos, sortBy, page, search, position}); onClickOpenVideo(v)},
               }}
             />
           </div>
@@ -189,7 +190,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, onClickOpenVideo, onC
 
       {/* Show message if seach input returns no results */ }
       {
-        (data.length === 0 && search.length > 1) &&
+        (videos.length === 0 && search.length > 1) &&
         <p className="pl-4">
           No videos found: <span className="text-neutral-400">"{search}"</span>
         </p>
