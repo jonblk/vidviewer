@@ -39,7 +39,7 @@ export default function AddVideoModal({
 
   // State for yt-dlp form
   const [url, setUrl] = useState("");
-  const [selectedPlaylist, setSelectedPlaylist] = useState<number | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(0);
   const [selectedVideoFormat, setSelectedVideoFormat] = useState<VideoFormat>();
   const [videoFormats, setVideoFormats] = useState<VideoFormat[]>([]);
   const [isFetchingVideoFormats, setIsFetchingVideoFormats] = useState(false);
