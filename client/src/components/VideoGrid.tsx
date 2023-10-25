@@ -102,9 +102,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, on
 
       const data = (await response.json()) as Video[];
 
-      if (data.length < LIMIT) {
-        setHasMore(false);
-      }
+      setHasMore(!(data.length < LIMIT));
 
       if (page > 1) {
         setVideos(videos => [...videos, ...data]);
@@ -126,10 +124,10 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, on
   );
 
   // On initial render
-  // Load saved state, and/or fetch videos 
+  // Load state and/or fetch videos 
   useEffect(() => {
     const savedState = getGridState();
-    
+
     if (savedState) {
       setVideos(savedState.videos)
       setSearch(savedState.search)

@@ -22,8 +22,6 @@ export const useInfiniteScroll = (
 
   const scrollTriggerRef = useRef<HTMLDivElement>(null);
 
-  // On Position change callback
-  
   const handleScroll = useCallback(() => {
     setPosition(window.scrollY)
 

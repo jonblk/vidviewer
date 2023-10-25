@@ -39,7 +39,7 @@ export default function AddVideoModal({
 
   // State for yt-dlp form
   const [url, setUrl] = useState("");
-  const [selectedPlaylist, setSelectedPlaylist] = useState(0);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(1);
   const [selectedVideoFormat, setSelectedVideoFormat] = useState<VideoFormat>();
   const [videoFormats, setVideoFormats] = useState<VideoFormat[]>([]);
   const [isFetchingVideoFormats, setIsFetchingVideoFormats] = useState(false);
@@ -238,7 +238,7 @@ export default function AddVideoModal({
       <div>
         <Label htmlFor="playlist">Playlist</Label>
         <Dropdown
-          selected={{label: playlists[1].name, value: playlists[1].id}}
+          selected={{label: playlists[selectedPlaylist].name, value: playlists[selectedPlaylist].id}}
           disabled={false}
           isFetching={false}
           options={playlists
@@ -250,7 +250,7 @@ export default function AddVideoModal({
         />
       </div>
 
-      <br />
+      <div className="h-1"></div>
 
       {/* Submit button*/}
       <Button
