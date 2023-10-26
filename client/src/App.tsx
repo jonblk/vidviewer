@@ -26,7 +26,10 @@ export interface Video {
   title: string;
   duration: string;
   url: string;
-  removed: boolean  // track whether user deletes or removes it from playlist
+  // track whether user deletes video, or removes video from playlist
+  // this is needed to update the cached videos (in local storage) when the user 
+  // navigates back to the playlist videos after watching the video. 
+  removed: boolean  
 }
 
 export enum VideoUpdateType {

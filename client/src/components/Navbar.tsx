@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FiSettings } from 'react-icons/fi';
 import { HiOutlineMoon, HiOutlineSun } from 'react-icons/hi';
 import { IoIosAdd } from 'react-icons/io';

@@ -20,7 +20,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose, onClickEditVi
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleBackButtonClick = () => {
-    onClose(undefined);
+    onClose();
   };
 
   const handlePlayToggle = () => {

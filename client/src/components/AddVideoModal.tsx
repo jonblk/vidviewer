@@ -39,7 +39,7 @@ export default function AddVideoModal({
 
   // State for yt-dlp form
   const [url, setUrl] = useState("");
-  const [selectedPlaylist, setSelectedPlaylist] = useState(1);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(playlists[1]);
   const [selectedVideoFormat, setSelectedVideoFormat] = useState<VideoFormat>();
   const [videoFormats, setVideoFormats] = useState<VideoFormat[]>([]);
   const [isFetchingVideoFormats, setIsFetchingVideoFormats] = useState(false);
@@ -48,8 +48,14 @@ export default function AddVideoModal({
 
   const [isFetchingSubmit, setIsFetchingSubmit] = useState(false);
 
+
+    console.log(playlists)
+
   const handlePlaylistChange = (option: Option) => {
-    setSelectedPlaylist(+option.value);
+    const playlist = playlists.find(p=>p.id === +option.value)
+    if (playlist) {
+      setSelectedPlaylist(playlist);
+    }
   };
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,9 +115,11 @@ export default function AddVideoModal({
       return;
     }
 
+
+
     const data: FormData = {
       source: type.value === 1 ? "disk" : "ytdlp",
-      playlist_id: selectedPlaylist,
+      playlist_id: selectedPlaylist.id,
       format: selectedVideoFormat?.format_id,
       folder,
       url,
@@ -238,7 +246,7 @@ export default function AddVideoModal({
       <div>
         <Label htmlFor="playlist">Playlist</Label>
         <Dropdown
-          selected={{label: playlists[selectedPlaylist].name, value: playlists[selectedPlaylist].id}}
+          selected={{label: selectedPlaylist.name, value: selectedPlaylist.id}}
           disabled={false}
           isFetching={false}
           options={playlists

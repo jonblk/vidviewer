@@ -8,7 +8,7 @@ import Dropdown  from "./Dropdown";
 interface VideoGridProps {
   playlistId: number;
   videos: Video[];
-  setVideos: (videos: Video[]) => void;
+  setVideos:  React.Dispatch<React.SetStateAction<Video[]>>;
   onClickOpenVideo: (v: Video) => void;
   onClickEditVideo: (video: Video) => void
 }
@@ -104,11 +104,9 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, on
 
       setHasMore(!(data.length < LIMIT));
 
-      if (page > 1) {
-        setVideos(videos => [...videos, ...data]);
-      } else {
-        setVideos(data);
-      }
+            setVideos((prevVideos) => page > 1 ? [...prevVideos, ...data] : data);
+
+
     } catch (e) {
       console.log(e);
     } finally {

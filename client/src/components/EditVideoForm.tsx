@@ -54,9 +54,10 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
       
       getPlaylists(id).catch(e=>console.log(e))
 
-      // You may want to return data here, depending on your use case
-    } catch (error) {
-      console.error(`Failed to fetch: ${error}`);
+    } catch (e) {
+      if (e instanceof Error) {
+        console.error(`Failed to fetch: ${e.message}`);
+      }
     }
   };
 
@@ -78,15 +79,20 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
     }
   };
 
-  const handleDelete = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleDelete = async () => {
     try {
       const response = await fetch(`https://localhost:8000/videos/${id}`, {
         method: "DELETE", 
       })
 
       if (response.ok) {
-        onSuccess({type: VideoUpdateType.DELETE, title, id}).catch(e=>console.log(e));
+        onSuccess(
+          {
+            type: VideoUpdateType.DELETE, 
+            title, 
+            id
+          }
+        );
       } else {
         console.log("Error editing video")
       }
@@ -108,7 +114,10 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
           >
             Cancel
           </Button>
-          <Button type="submit" color="danger" onClick={handleDelete}>
+          <Button type="submit" color="danger" onClick={(event: React.FormEvent) => {
+            event.preventDefault();
+            handleDelete().catch(e=>console.log(e));
+          }}>
             Delete
           </Button>
         </div>

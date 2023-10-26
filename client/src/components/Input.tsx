@@ -6,19 +6,20 @@ interface InputProps {
   label: string;
   id: string;
   value: string;
+  autoFocus?: boolean;
   transparent?: boolean;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onFocus?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const Input: React.FC<InputProps> = ({ label, onFocus, onBlur, type, id, value, onChange, transparent=false }) => {
+const Input: React.FC<InputProps> = ({ label, autoFocus, onFocus, onBlur, type, id, value, onChange, transparent=false }) => {
   const bg = transparent ? "bg-transparent" : "dark:bg-neutral-900"
   return (
     <div className="relative">
     <input
       aria-label={label}
-      autoFocus
+      autoFocus={autoFocus}
       type={type}
       id={id}
       value={value}

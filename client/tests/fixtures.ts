@@ -11,10 +11,12 @@ export const playlistData: Playlist[] = [
 export const videoData: Video[] = [
   {
     id: 1,
+    file_id: "12345678",
     file_path: "video1.mp4",
     thumbnail_path: "thumbnail1.jpg",
     title: "Video 1",
     duration: "00:05:30",
     url: "https://example.com/video1",
+    removed: false
   },
 ];
