@@ -10,11 +10,11 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+
 }
 
 ::-webkit-scrollbar {
-  width: 13px;
-  height: 20px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -38,6 +38,37 @@ body.dark::-webkit-scrollbar-thumb {
   border-radius: 4px;
 }
 
+.scrollbar::-webkit-scrollbar-thumb {
+  visibility: hidden;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  visibility: hidden;
+}
+
+.scrollbar:hover::-webkit-scrollbar-thumb {
+  visibility: visible;
+}
+
+.scrollbar:hover::-webkit-scrollbar-track {
+  visibility: visible;
+}
+
+body.dark::-webkit-scrollbar-track {
+  background: #222;
+}
+
+body.dark::-webkit-scrollbar-thumb {
+  background: #333;
+}
+
+body.dark .scrollbar::-webkit-scrollbar-thumb {
+  background: #333;
+}
+
+body.dark .scrollbar::-webkit-scrollbar-track {
+  background: #222;
+}
 
 @keyframes spin {
   0% {

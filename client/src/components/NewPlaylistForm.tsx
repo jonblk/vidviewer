@@ -28,9 +28,9 @@ const NewPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
     <form className="flex-col flex w-full">
       <div className="mb-4 w-full">
         <Label htmlFor="name">
-          Playlist name
+          New Playlist
         </Label>
-        <Input label="Playlist name" type="text" id="name" value={name} onChange={event=>setName(event.target.value)} />
+        <Input autoFocus={true} label="New Playlist" type="text" id="name" value={name} onChange={event=>setName(event.target.value)} />
       </div>
       <div className="flex items-center gap-4 ">
         <Button dataTestid="create-playlist-button" color="primary" type="submit" onClick={handleSubmit}>
