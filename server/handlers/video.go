@@ -281,7 +281,6 @@ type ErrorResponse struct {
 }
 
 func CreateVideo(w http.ResponseWriter, r *http.Request) {
-	// Context
 	repositories := getRepositories(r)
 	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath
 	videoRepository := repositories.VideoRepo
@@ -415,7 +414,7 @@ func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo 
 	}
 
 	for _, path := range paths {
-    ext := filepath.Ext(path)
+    	ext := filepath.Ext(path)
 		if ext != ".webm" && ext != ".mp4" {
 			continue
 		}
@@ -423,7 +422,7 @@ func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo 
 		// Get the md5 checksum
 		checksum, err := computeChecksum(path)
 
-    if err != nil {
+    	if err != nil {
 			log.Println("Error creating md5 checksum", err)
 			continue
 		}
@@ -438,7 +437,7 @@ func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo 
 
 		// Create file_id
 		fileID, err := generateFileID()
-    if err != nil {
+    	if err != nil {
 			log.Println("Error generating fileID", path)
 			continue
 		}
@@ -452,7 +451,7 @@ func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo 
 		video.Md5Checksum = checksum
 		video.FileID = fileID
 
-    duration, err := getVideoDuration(path)
+    	duration, err := getVideoDuration(path)
 
 		if err == nil {
 			video.Duration = duration
@@ -479,25 +478,24 @@ func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo 
 		// Create folders to store the file
 		destinationFolderPath, err := files.CreateFileFolders(rootFolderPath, fileID)
 		if (err != nil)  {
-      log.Println("Error creating folders for video file", err)
+      		log.Println("Error creating folders for video file", err)
 			videoRepo.Delete(fmt.Sprint(videoID))
 			continue
 		}
 
 		// Copy file to new destination
 		err = files.CopyFile(path, filepath.Join(destinationFolderPath, fileID + ext))
-    if (err != nil)  {
-      log.Println("Error copying file to new folder", err)
+    	if (err != nil)  {
+      		log.Println("Error copying file to new folder", err)
 			videoRepo.Delete(fmt.Sprint(videoID))
 			continue
 		}
 
 		// Create a video thumbnail and save to destination
 		extractThumbnail(path, filepath.Join(destinationFolderPath, fileID + ".jpg"))
-    if (err != nil)  {
-      log.Println("Error creating video thumbnail", err)
+    	if (err != nil)  {
+      		log.Println("Error creating video thumbnail", err)
 		}
-
 
 		// Write to websocket so client can refresh
 		ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadSuccess)})
@@ -561,15 +559,24 @@ func loadVideoWithYtdlp(url string, playlistID string, format string, playlistVi
 		}
 
 		// Update video in db
-		updateVideoOnDownloadSuccess(videoRepository, video, downloadVideoPathWithExt)
+		video = updateVideoOnDownloadSuccess(videoRepository, video, downloadVideoPathWithExt)
 
-		log.Println("youtube id is :" + ytID)
-       
 		// Save thumbnail
-		err = ytdlp.DownloadVideoThumbnail(url, downloadImgPath)
+		thumbnail_extract_err := ytdlp.DownloadVideoThumbnail(url, downloadImgPath)
+
+        // Add duration if its nil
+		if (duration == "") {
+			duration, err = getVideoDuration(downloadVideoPathWithExt)
+			if (err == nil) {
+				video.Duration = duration
+				videoRepository.Update(video)
+			} else {
+				log.Println("Error extracting duration:", err)
+			}
+		}
 
 		// If save unsuccessful, use FFMPEG
-		if err != nil {
+		if thumbnail_extract_err != nil {
 			extractThumbnail(downloadVideoPathWithExt, downloadImgPathWithExt)
 		}
 
@@ -578,17 +585,21 @@ func loadVideoWithYtdlp(url string, playlistID string, format string, playlistVi
 
 		if err != nil {
 			log.Println(err.Error())
+			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadFail)})
+			return
 		} 
 
-    // Split video filename into base name and extension
-	  imgBaseName := filepath.Base(downloadImgPathWithExt)
-	  videoBaseName := filepath.Base(downloadVideoPathWithExt)
+        // Split video filename into base name and extension
+	  	imgBaseName := filepath.Base(downloadImgPathWithExt)
+	  	videoBaseName := filepath.Base(downloadVideoPathWithExt)
 
 		// Move video file from temp folder to the new folder
 		newVideoFilePath := filepath.Join(folderPath, videoBaseName)
 		err = files.MoveFile(downloadVideoPathWithExt, newVideoFilePath)
-    if err != nil {
+        if err != nil {
 			log.Println("Error moving video file from temp folder", err)
+			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadFail)})
+			return
 		}
 			
 		// Move image file from temp folder to the new folder
@@ -596,9 +607,11 @@ func loadVideoWithYtdlp(url string, playlistID string, format string, playlistVi
 		err = files.MoveFile(downloadImgPathWithExt, newImageFilePath)
 		if err != nil {
 			log.Println("Error moving image file from temp folder", err)
+			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadFail)})
+			return
 		}
 
-		// Write to websocket so client can refresh
+		// Write success message to websocket so client can refresh UI
 		ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadSuccess)})
 	}
 
@@ -617,6 +630,7 @@ func extractThumbnail(videoPath, outputPath string) error {
 	// Run the FFmpeg command to extract the thumbnail
 	cmd := exec.Command("ffmpeg", "-i", videoPath, "-ss", "00:00:01", "-vframes", "1", outputPath)
 	output, err := cmd.CombinedOutput()
+	
 	if err != nil {
 		fmt.Println("FFMPEG Error:", err)
 		fmt.Println("Output:", string(output))
@@ -626,7 +640,7 @@ func extractThumbnail(videoPath, outputPath string) error {
 	return nil
 }
 
-func updateVideoOnDownloadSuccess(repo repository.VideoRepository, video models.Video, filepath string) {
+func updateVideoOnDownloadSuccess(repo repository.VideoRepository, video models.Video, filepath string) models.Video {
 	currentTime := time.Now()
 	formattedTime := currentTime.Format("2006-01-02 15:04:05")
 	md5Checksum, checksumErr := computeChecksum(filepath)
@@ -641,6 +655,7 @@ func updateVideoOnDownloadSuccess(repo repository.VideoRepository, video models.
 
     // Prepare the SQL statement for inserting a row
 	repo.Update(video)
+	return video
 }
 
 type ProbeData struct {
@@ -653,10 +668,11 @@ func getVideoDuration(path string) (duration string, err error) {
     // Call ffprobe command to get duration information
    cmd := exec.Command("ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path)
    output, err := cmd.Output()
-   if err != nil {
+
+    if err != nil {
        fmt.Println("Error:", err)
        return "", err
-   }
+    }
 
    // Parse the output as a float64
    durationInSeconds, err := strconv.ParseFloat(strings.TrimSpace(string(output)), 64)
@@ -681,7 +697,6 @@ func getVideoDuration(path string) (duration string, err error) {
        return fmt.Sprintf("%d", seconds), nil
    } 
 }
-
 
 func generateFileID() (string, error) {
 	// Define the set of alphanumeric characters

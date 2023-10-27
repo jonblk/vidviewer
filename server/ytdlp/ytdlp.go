@@ -2,6 +2,8 @@ package ytdlp
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"log"
 	"os/exec"
 	"strings"
@@ -53,14 +55,21 @@ func GetFormats(url string) ([]Format, error) {
 }
 
 func DownloadVideoThumbnail(videoURL, outputPath string) error {
-	// Run the yt-dlp command to extract the thumbnail
-	cmd := exec.Command("yt-dlp", "--write-thumbnail", "--skip-download", "--convert-thumbnails", "jpg",  "-o", outputPath, videoURL)
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
+    // Run the yt-dlp command to extract the thumbnail
+    cmd := exec.Command("yt-dlp", "--write-thumbnail", "--skip-download", "--convert-thumbnails", "jpg",  "-o", outputPath, videoURL)
 
-	return nil
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        fmt.Printf("Command's output:\n%s\n", string(output))
+        return err
+    }
+    
+    outputStr := string(output)
+    if strings.Contains(outputStr, "There are no video thumbnails to download") {
+        return errors.New("no video thumbnails to download")
+    }
+
+    return nil 
 }
 
 func ExtractVideoInfo(url string) (string, string, error) {
@@ -80,8 +89,16 @@ func ExtractVideoInfo(url string) (string, string, error) {
 
 	log.Println(info)
 
-	title := strings.TrimSpace(info[0])
-	duration := strings.TrimSpace(info[1])
+	title := ""
+	duration :=  ""
+
+	if (len(info) > 0) {
+		title = strings.TrimSpace(info[0])
+	} 
+	
+	if (len(info) > 1 ) {
+		duration = strings.TrimSpace(info[1])
+	}
 
 	if duration == "" {
 		log.Println("Failed to extract video duration")
@@ -91,10 +108,8 @@ func ExtractVideoInfo(url string) (string, string, error) {
 		log.Println("Failed to extract video title")
 	}
 
-	return duration, title, nil
+	return duration, title, err
 }
-
-
 
 func DownloadVideo(url string, format string, filepath string, callback func(v bool)) {
 	 // Set the desired video quality in the format string
