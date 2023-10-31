@@ -26,6 +26,9 @@ func (repo *VideoRepository) GetBy(value string, by string) (models.Video, error
 
 	err := repo.GetDB().QueryRow(query, value).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
 
+	log.Println(video.ID)
+	log.Println(video.Url)
+
 	if err != nil {
 		log.Println(err.Error())
 		return video, err
