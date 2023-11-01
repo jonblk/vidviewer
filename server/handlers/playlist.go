@@ -110,7 +110,7 @@ func CreatePlaylist(w http.ResponseWriter, r *http.Request) {
 	currentTime := time.Now()
 	formattedTime := currentTime.Format("2006-01-02 15:04:05")
 
-	err = repo.Create(name, formattedTime)
+	_, err = repo.Create(name, formattedTime)
 
 	if err != nil {
 		log.Println(err.Error())

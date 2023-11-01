@@ -120,7 +120,7 @@ func UpdateVideo(w http.ResponseWriter, r *http.Request) {
 
 	video.Title = videoUpdate.Title
 
-	err = videoRepo.Update(video)
+	err = videoRepo.Update(*video)
 
 	if err != nil {
 		http.Error(w, "Failed to update video", http.StatusInternalServerError)

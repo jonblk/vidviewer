@@ -3,8 +3,10 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -13,17 +15,31 @@ import (
 )
 
 const migrationsPath = "./../migrations/"
+const testDatabasePath = "./../testdata/test.db?mode=rwc"
+
+// RandomString generates a random string of length n
+func RandomString(n int) string {
+  seed := time.Now().UnixNano()
+  r := rand.New(rand.NewSource(seed))
+  charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  b := make([]byte, n)
+  for i := range b {
+      b[i] = charset[r.Intn(len(charset))]
+  }
+  return string(b)
+}
 
 // Helper function to create a new in-memory SQLite database and return a *sql.DB
-func NewTestDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("sqlite3", "./../testdata/test.db?mode=rwc")
+func InitializeDB(t *testing.T) *sql.DB {
+	db, err := sql.Open("sqlite3", testDatabasePath)
 	if err != nil {
 		t.Fatalf("Failed to open in-memory SQLite database: %s\n", err)
 	}
+	applyMigrations(t, db)
 	return db
 }
 
-func ApplyMigrations(t *testing.T, db *sql.DB) {
+func applyMigrations(t *testing.T, db *sql.DB) {
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
 		t.Fatalf("Failed to create database driver: %s\n", err)
@@ -40,7 +56,16 @@ func ApplyMigrations(t *testing.T, db *sql.DB) {
 	}
 }
 
-func CleanupMigrations(t *testing.T,  db *sql.DB) {
+func Contains(arr []int64, val int64) bool {
+   for _, a := range arr {
+       if a == val {
+           return true
+       }
+   }
+   return false
+}
+
+func CleanupDB(t *testing.T,  db *sql.DB) {
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
 		t.Fatalf("Failed to create database driver: %s\n", err)

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"vidviewer/models"
@@ -26,9 +27,6 @@ func (repo *VideoRepository) GetBy(value string, by string) (models.Video, error
 
 	err := repo.GetDB().QueryRow(query, value).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
 
-	log.Println(video.ID)
-	log.Println(video.Url)
-
 	if err != nil {
 		log.Println(err.Error())
 		return video, err
@@ -38,14 +36,24 @@ func (repo *VideoRepository) GetBy(value string, by string) (models.Video, error
 }
 
 // Get the video
-func (repo *VideoRepository) Get(id string) (models.Video, error) {
-	video := models.Video{}
-
-	err := repo.GetDB().QueryRow("SELECT * FROM videos WHERE id = ?", id).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
-
+func (repo *VideoRepository) Get(id string) (*models.Video, error) {
+	// Check if the video exists
+	var count int
+	err := repo.GetDB().QueryRow("SELECT COUNT(*) FROM videos WHERE id = ?", id).Scan(&count)
 	if err != nil {
-		log.Println(err.Error())
-		return video, err
+		return nil, err
+	}
+
+	// If the video does not exist, return an error
+	if count == 0 {
+		return nil, errors.New("video not found")
+	}
+
+	// If the video exists, retrieve it
+	video := &models.Video{}
+	err = repo.GetDB().QueryRow("SELECT * FROM videos WHERE id = ?", id).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
+	if err != nil {
+		return nil, err
 	}
 
 	return video, nil
@@ -199,6 +207,7 @@ func (repo *VideoRepository) GetFromPlaylist(playlistID string, limit uint, page
 			log.Fatal(err)
 			return nil, err
 		}
+		videoItem.DownloadDate = video.DownloadDate
 		videoItem.DownloadComplete = video.DownloadComplete
 		videoItem.ID = video.ID
 		videoItem.Title = video.Title

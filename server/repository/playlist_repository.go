@@ -89,18 +89,25 @@ func (repo *PlaylistRepository) GetAllFromVideo(videoID string) ([]models.Playli
 
 }
 
-func (repo *PlaylistRepository) Create(name string, date string) (error) {
+func (repo *PlaylistRepository) Create(name string, date string) (int64, error) {
 	// Prepare the SQL statement for inserting a row
 	stmt, err := repo.GetDB().Prepare("INSERT INTO playlists (name, date) VALUES (?, ?)")
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Execute the SQL statement with the values for the row
-	_, err = stmt.Exec(name, date)
+	execution, _ := stmt.Exec(name, date)
 
-	return err
+	execution.LastInsertId()
+
+	id, err := execution.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return id, err
 }
 
 func (repo *PlaylistRepository) Delete(id string) error {
