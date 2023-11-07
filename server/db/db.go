@@ -6,16 +6,21 @@ import (
 	"time"
 
 	migrate "github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/source"
+	_ "github.com/golang-migrate/migrate/v4/source/iofs"
+
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 // Access the database using the db.SQL variable,
 // which is an instance of *sql.DB representing the connection pool
-
 var dbs map[string]*sql.DB
 
 var ActiveConnection *sql.DB
+
+var embededMigrations *source.Driver
 
 func GetDB(path string) (*sql.DB, bool) {
   _, exists := dbs[path] 
@@ -42,21 +47,31 @@ func UpdateActiveConnection(dbPath string) *sql.DB {
 		dbs[dbPath].SetMaxIdleConns(5)
 		dbs[dbPath].SetConnMaxIdleTime(5 * time.Minute)
 
-		runMigrations(dbPath)
+		if embededMigrations == nil {
+			runMigrations(dbPath)
+		} else {
+			runMigrationsFromEmbedded(dbPath, *embededMigrations)
+		}
 	}
 
-  // Update active connection
-  ActiveConnection = dbs[dbPath]
+	// Update active connection
+	ActiveConnection = dbs[dbPath]
 
-  return ActiveConnection
+	return ActiveConnection
 }
 
 func InitializeDB() {
-  if dbs == nil {
-    dbs = make(map[string]*sql.DB)
-  }
+	if dbs == nil {
+		dbs = make(map[string]*sql.DB)
+	}
 }
 
+func SetEmbededMigrations(migrations source.Driver) {
+	embededMigrations = &migrations 
+}
+
+
+// Run the migrations from the migrations folder 
 func runMigrations(dbPath string) {
 	m, err := migrate.New("file://./migrations", "sqlite3:///"+dbPath)
 	if err != nil {
@@ -74,5 +89,41 @@ func runMigrations(dbPath string) {
 			log.Println("Error processing migrations: " + err.Error())
 			break
 		}
+	}
+}
+
+// Run the migrations from the migrations folder 
+// that is embeded in the binary build
+func runMigrationsFromEmbedded(dbPath string, d source.Driver) {
+	log.Println("running embeded migrations")
+    db, err := sql.Open("sqlite3", dbPath)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    m, err := migrate.NewWithInstance("iofs", d, "sqlite3", driver)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+
+	for {
+		err = m.Up()
+		if err == migrate.ErrNoChange {
+			break
+		}
+		if err != nil {
+			log.Println("Error processing migrations: " + err.Error())
+			break
+		}
+	}
+
+	if err != migrate.ErrNoChange {
+		log.Fatal("Migration failed with error: " + err.Error())
 	}
 }
