@@ -70,7 +70,6 @@ func SetEmbededMigrations(migrations source.Driver) {
 	embededMigrations = &migrations 
 }
 
-
 // Run the migrations from the migrations folder 
 func runMigrations(dbPath string) {
 	m, err := migrate.New("file://./migrations", "sqlite3:///"+dbPath)

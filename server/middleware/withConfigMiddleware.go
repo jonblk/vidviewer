@@ -14,7 +14,7 @@ const ConfigKey MiddleWareKey = "Config"
 // Loads the config and passes it to handlers via router context
 func ConfigMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c := config.Initialize()
+		c := config.Load()
 		ctx := context.WithValue(r.Context(), ConfigKey, c)
 		r = r.WithContext(ctx)
 

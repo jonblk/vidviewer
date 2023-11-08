@@ -29,16 +29,15 @@ var (
 	migrations embed.FS
 )
 
-
 func main() {
-	// Initialize SSL Ceritification
-	error := config.InitializeSSLCert()
-	if (error != nil) {
-		log.Fatal("Error initializing ssl certification:", error.Error())
-	}
+    // Get the app mode: dev/test/production(default)
+    var mode string
+	flag.StringVar(&mode, "mode", "production", "Mode of application runtime")
+	flag.Parse()
+
+	config.Initialize(mode == "test") 
 
 	// Check if the migrations directory exists in the embedded file system
-	// Pass a pointer to the embeded migrations driver to iofs.New
     _, err := migrations.ReadDir("migrations")
 
     if err == nil { 
@@ -46,6 +45,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		} 
+		// Save the pointer to the embeded migrations driver 
 		db.SetEmbededMigrations(d)
 	}
 	
@@ -55,14 +55,6 @@ func main() {
 
 	// Initialize routes
 	r := routes.Initialize(assets, htmlFiles, repositories)
-
-    // Parse command-line flag to get app mode:
-	// dev
-	// test
-	// production (default)
-    var mode string
-	flag.StringVar(&mode, "mode", "production", "Mode of application runtime")
-	flag.Parse()
 
 	var srv *http.Server
 

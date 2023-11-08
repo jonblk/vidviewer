@@ -17,9 +17,16 @@ type Config struct {
 	FolderPath string `yaml:"folderPath" json:"folder_path"`
 }
 
+var isTestMode bool = false
+
+// The config directory
 func getRootPath() string {
 	path, _ := os.UserConfigDir()
-	return filepath.Join(path, "vidviewer")
+	if isTestMode {
+		return filepath.Join(path, "vidviewer-testdata")
+	} else {
+		return filepath.Join(path, "vidviewer")
+	}
 }
 
 func GetSSLCertPath() string {
@@ -30,7 +37,7 @@ func GetSSlKeyPath() string {
 	return filepath.Join(getRootPath(), "localhost-key.pem")
 }
 
-func InitializeSSLCert() error {
+func initializeSSLCert() error {
     var path = getRootPath()
 	// Check if the mkcert command is available in the system's PATH
 	_, err := exec.LookPath("mkcert")
@@ -80,8 +87,27 @@ func Path() string {
 	return getConfigFilePath()
 }
 
+func Initialize(_isTestMode bool) {
+	isTestMode = _isTestMode
+
+	if isTestMode {
+		err := os.RemoveAll(getRootPath())
+		if err != nil {
+			log.Fatalf("Failed to delete config test directory: %s", err)
+		}	
+	}
+
+	error := initializeSSLCert()
+	if (error != nil) {
+		log.Fatal(
+			"Error initializing ssl certification:", 
+			error.Error(),
+		)
+	}
+}
+
 // Load, or create config.yaml if necessary
-func Initialize() Config {
+func Load() Config {
 	filePath := getConfigFilePath()
 
 	// Create root config folder if it doesn't exist
@@ -102,7 +128,8 @@ func Initialize() Config {
 		Update(Config{FolderPath: ""})
 	}
 
-	// Load
+	// NOTE this is being called on every request 
+	// Read/update from memory instead?
 	data, err := ioutil.ReadFile(filePath)
 
 	if err != nil {
