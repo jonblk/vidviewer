@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Label from "./Label";
 import Input from "./Input";
 import Button from "./Button";
+import GlobalContext from "../contexts/GlobalContext";
 
 interface FormComponentProps {
   onSuccess: () => Promise<void>
@@ -11,10 +12,11 @@ interface FormComponentProps {
 
 const NewPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
   const [name, setName] = useState("");
+  const rootURL = useContext(GlobalContext)?.rootURL
 
   const handleSubmit =  (event: React.FormEvent)  => {
     event.preventDefault();
-     fetch("https://localhost:8000/playlists", {
+     fetch(`${rootURL}/playlists`, {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded", // or "multipart/form-data"
         },

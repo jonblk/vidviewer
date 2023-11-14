@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"vidviewer/config"
 	"vidviewer/errors"
 	"vidviewer/files"
@@ -11,7 +12,8 @@ import (
 // Loads the config and passes it to handlers via router context
 func FilesMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if (r.URL.Path == "/websocket" || r.URL.Path == "/config") {
+		// Continue to next handler (for initialization)
+		if (r.URL.Path == "/" || r.URL.Path == "/websocket" || r.URL.Path == "/config" || strings.HasPrefix(r.URL.Path, "/assets/")) {
 			next.ServeHTTP(w, r)
 			return
 		}

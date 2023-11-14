@@ -3,7 +3,8 @@ import Button from "./Button";
 import Label from "./Label";
 import CheckboxList from "./CheckboxList";
 import { Playlist, VideoUpdateProps, VideoUpdateType } from "../App";
- import { useEffect, useState } from "react";
+ import { useContext, useEffect, useState } from "react";
+import GlobalContext from "../contexts/GlobalContext";
 
 interface FormComponentProps {
   onSuccess: (v: VideoUpdateProps) =>  void
@@ -23,9 +24,11 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
   const [videoPlaylists, setVideoPlaylists] = useState<VideoPlaylist[]>(allPlaylists.map(p=>({playlist_id: p.id, name: p.name, checked: false})));
   const [pendingDelete, setPendingDelete] = useState(false);
 
+  const rootURL = useContext(GlobalContext)?.rootURL
+
   const getPlaylists = async (video_id: number) => {
       //Returns an array of the video's playlists
-      const response = await fetch(`https://localhost:8000/video/${video_id}/playlists`)
+      const response = await fetch(`${rootURL}/video/${video_id}/playlists`)
       const json = await response.json() as Playlist[]
      
       setVideoPlaylists(vps=> vps.map(vp=>({...vp, checked: json.some(p=>p.id === vp.playlist_id)})))
@@ -36,7 +39,7 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
     method: "POST" | "DELETE"
   ) => {
     try {
-      const response = await fetch(`https://localhost:8000/playlist_videos`, {
+      const response = await fetch(`${rootURL}/playlist_videos`, {
         headers: { "Content-Type": "application/json" },
         method,
         body: JSON.stringify({ playlist_id: playlistId.toString(), video_id: id.toString() }),
@@ -66,7 +69,7 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
 
   const handleTitleChange = async (title: string) => {
     try {
-      await fetch(`https://localhost:8000/videos/${id}`, {
+      await fetch(`${rootURL}/videos/${id}`, {
         headers: {
           "Content-Type": "application/json", // or "multipart/form-data"
         },
@@ -81,7 +84,7 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`https://localhost:8000/videos/${id}`, {
+      const response = await fetch(`${rootURL}/videos/${id}`, {
         method: "DELETE", 
       })
 

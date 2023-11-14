@@ -12,6 +12,20 @@ import { useWebSocket } from 'react-use-websocket/dist/lib/use-websocket';
 import { useEvent } from './hooks/useEvent';
 import ConfigForm from './components/ConfigForm';
 import AddVideoModal from './components/AddVideoModal';
+import GlobalContext from './contexts/GlobalContext';
+
+const env_server_port: string | undefined = process.env.SERVER_PORT
+let rootURL: string
+
+
+const websocketPath = `wss://localhost:${process.env.SERVER_PORT}/websocket`
+
+if (env_server_port === undefined) {
+  alert("SERVER_PORT env variable not found. Please check .env in root folder and rebuild the application")
+  throw(new Error("missing "))
+} else {
+  rootURL = `https://localhost:${process.env.SERVER_PORT as string}`
+}
 
 export interface Playlist {
   id: number;
@@ -93,13 +107,11 @@ const App: React.FC = () => {
   const [playlistVideos, setPlaylistVideos] = useState<Video[]>([])
 
   // Establish websocket connection
-  const { lastMessage, readyState } = useWebSocket(
-    "wss://localhost:8000/websocket"
-  );
+  const { lastMessage, readyState } = useWebSocket(websocketPath);
 
   const fetchPlaylists = async (callback?: () => void) => {
     try {
-      const response = await fetch("https://localhost:8000/playlists");
+      const response = await fetch(`${rootURL}/playlists`);
       const data = (await response.json()) as Playlist[];
 
       setPlaylists(data);
@@ -174,8 +186,7 @@ const App: React.FC = () => {
   }, [readyState, lastMessage, onVideoDownloadSuccess]);
 
   return (
-    <>
-      {/* MODAL */}
+    <GlobalContext.Provider value={{ rootURL }}>
       <Modal
         isLocked={
           isConfigMissing ||
@@ -342,7 +353,7 @@ const App: React.FC = () => {
           )}
         </main>
       </div>
-    </>
+    </GlobalContext.Provider>
   );
 };
 

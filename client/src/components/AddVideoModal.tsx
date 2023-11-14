@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import Dropdown, { Option } from "./Dropdown";
 import { Playlist } from "../App";
 import Button from "./Button";
@@ -7,6 +7,7 @@ import Label from "./Label";
 import useDebounce from "../hooks/useDebounce";
 import { isValidUrl } from "../util";
 import Input from "./Input";
+import GlobalContext from "../contexts/GlobalContext";
 
 interface AddVideoModalProps {
     playlists: Playlist[];
@@ -37,6 +38,8 @@ export default function AddVideoModal({
 }: AddVideoModalProps) {
   const [type, setType] = useState<Option>({ value: 0, label: "🔗 URL" });
 
+  const rootURL = useContext(GlobalContext)?.rootURL
+
   // State for yt-dlp form
   const [url, setUrl] = useState("");
   const [selectedPlaylist, setSelectedPlaylist] = useState(playlists[1]);
@@ -66,7 +69,7 @@ export default function AddVideoModal({
     try {
       setIsFetchingVideoFormats(true);
       const r = await fetch(
-        `https://localhost:8000/video_formats?url=${encodeURIComponent(url)}`
+        `${rootURL}/video_formats?url=${encodeURIComponent(url)}`
       );
 
       if (r.ok) {
@@ -135,7 +138,7 @@ export default function AddVideoModal({
 
     try {
       const response = await fetch(
-        "https://localhost:8000/videos",
+        `${rootURL}/videos`,
         requestOptions
       );
 

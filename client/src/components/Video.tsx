@@ -1,8 +1,9 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useContext } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiPause, FiPlay } from 'react-icons/fi';
 import { Video } from '../App';
 import { formatSeconds } from '../util';
+import GlobalContext from '../contexts/GlobalContext';
 
 interface VideoPlayerProps {
   video: Video;
@@ -18,6 +19,7 @@ type VideoControls = {
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose, onClickEditVideo }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const rootURL = useContext(GlobalContext)?.rootURL;
 
   const handleBackButtonClick = () => {
     onClose();
@@ -34,7 +36,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose, onClickEditVi
     }
   };
 
-  const videoUrl = `https://localhost:8000/videos/${video.id}`
+  const videoUrl = `${rootURL}/videos/${video.id}`
 
   // Load/Save {volume, muted} from/to localstorage
   useEffect(()=> {

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react"; import { Video } from "../App";
+import { useCallback, useContext, useEffect, useState } from "react"; import { Video } from "../App";
 import VideoGridItem from "./VideoGridItem";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 import Spinner from "./Spinner";
 import Input from "./Input";
 import Dropdown  from "./Dropdown";
+import GlobalContext from "../contexts/GlobalContext";
 
 interface VideoGridProps {
   playlistId: number;
@@ -63,6 +64,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, on
   const [sortBy, setSortBy] = useState(0)
   const [savedPosition, setSavedPosition] = useState(0);
   const [position, setPosition, isFetching, setIsFetching, setHasMore, scrollTriggerRef] = useInfiniteScroll(handleScrollToBottom);
+  const rootURL = useContext(GlobalContext)?.rootURL
 
   // When user scrolls to bottom of page
   function handleScrollToBottom() {
@@ -97,7 +99,7 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, on
 
     try {
       const response = await fetch(
-        `https://localhost:8000/playlist/${playlistId}/videos?page=${page}&limit=${LIMIT}&search=${search}&sortBy=${sortBy}`
+        `${rootURL}/playlist/${playlistId}/videos?page=${page}&limit=${LIMIT}&search=${search}&sortBy=${sortBy}`
       );
 
       const data = (await response.json()) as Video[];

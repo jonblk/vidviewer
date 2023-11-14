@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { FiMoreHorizontal, FiPlay } from "react-icons/fi";
 import { Video } from "../App";
 import { formatSeconds } from "../util";
+import GlobalContext from "../contexts/GlobalContext";
 
 interface GridItemProps {
   video: Video;
@@ -19,6 +20,7 @@ const GridItem: React.FC<GridItemProps> = ({
   onClickOpenVideo,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const rootURL = useContext(GlobalContext)?.rootURL
 
   return (
     <div>
@@ -29,7 +31,7 @@ const GridItem: React.FC<GridItemProps> = ({
       >
         <div className="w-full relative aspect-video bg-black overflow-hidden rounded-lg">
           <img
-            src={`https://localhost:8000/images/${video.file_id}`}
+            src={`${rootURL}/images/${video.file_id}`}
             alt={title}
             className="w-full rounded-lg object-center object-cover h-full"
           />

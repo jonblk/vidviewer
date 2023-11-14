@@ -18,24 +18,28 @@ import (
 )
 
 // Files/directories embeded into build
-var (
-	//go:embed build/*.html
-	htmlFiles embed.FS
 
-	//go:embed build
-	assets embed.FS
+//go:embed build/*.html
+var htmlFiles embed.FS
 
-	//go:embed migrations/*
-	migrations embed.FS
-)
+//go:embed build
+var assets embed.FS
+
+//go:embed migrations/*
+var migrations embed.FS
+
+// Passed with ldflags = go build -ldflags "-X main.myVar=myValue" 
+var serverPort string
+var clientPort string
 
 func main() {
-    // Get the app mode: dev/test/production(default)
     var mode string
 	flag.StringVar(&mode, "mode", "production", "Mode of application runtime")
 	flag.Parse()
 
-	config.Initialize(mode == "test") 
+	isTestMode := mode == "test"
+
+	config.Initialize(isTestMode) 
 
 	// Check if the migrations directory exists in the embedded file system
     _, err := migrations.ReadDir("migrations")
@@ -58,32 +62,39 @@ func main() {
 
 	var srv *http.Server
 
-	if mode == "development" {
-		// Enable CORS as we connect from host 5173
+
+	if mode == "dev" {
 		credentials := handlers.AllowCredentials()
 		methods := handlers.AllowedMethods([]string{"GET", "POST", "DELETE", "PUT"})
 		headers := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
-		origins := handlers.AllowedOrigins([]string{"http://localhost:5173"})
+		origins := handlers.AllowedOrigins([]string{"http://localhost:" + clientPort})
 		corsHandler := handlers.CORS(credentials, methods, headers, origins)(r)
 
 		srv = &http.Server{
-			Addr:         ":8000",
+			Addr:         ":" + serverPort,
 			Handler:      corsHandler,
-			IdleTimeout:  10 * time.Second,
-			ReadTimeout:  10 * time.Second,
-			WriteTimeout: 10 * time.Second,
+			IdleTimeout:  4 * time.Second,
+			ReadTimeout:  4 * time.Second,
+			WriteTimeout: 4 * time.Second,
 		}
 	} else {
 		srv = &http.Server {
-			Addr:         ":8000",
+			Addr:         ":" + serverPort,
 			Handler:      r,
-			// NOTE what should these values be?
-			IdleTimeout:  3 * time.Second,
-			ReadTimeout:  3 * time.Second,
-			WriteTimeout: 3 * time.Second,
+			IdleTimeout:  4 * time.Second,
+			ReadTimeout:  4 * time.Second,
+			WriteTimeout: 4 * time.Second,
 		}
 	}	
 
-	log.Println("Starting server...")
-	log.Fatal(srv.ListenAndServeTLS(config.GetSSLCertPath(), config.GetSSlKeyPath()))
+    if mode == "test" {
+		log.Println("Running server in Test Mode")
+	}
+
+	log.Fatal(
+		srv.ListenAndServeTLS(
+			config.GetSSLCertPath(), 
+			config.GetSSlKeyPath(),
+		),
+	)
 }

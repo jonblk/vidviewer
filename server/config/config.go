@@ -97,6 +97,18 @@ func Initialize(_isTestMode bool) {
 		}	
 	}
 
+	// Create root config folder if it doesn't exist
+	if _, err := os.Stat(getRootPath()); err != nil && os.IsNotExist(err) {
+		err := os.Mkdir(getRootPath(), os.ModePerm)
+		if err != nil {
+			log.Println("ERROR making config directory")
+			log.Println(err)
+		}
+	} else if err != nil {
+		fmt.Println("Error trying to get root path info: ", err)
+		panic(err)
+	}
+
 	error := initializeSSLCert()
 	if (error != nil) {
 		log.Fatal(

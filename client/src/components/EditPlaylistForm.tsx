@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import Input from "./Input";
 import Button from "./Button";
 import Label from "./Label";
+import GlobalContext from "../contexts/GlobalContext";
 
 interface FormComponentProps {
   onSuccess: () => Promise<void>
@@ -12,6 +13,7 @@ interface FormComponentProps {
 const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initialName }) => {
   const [name, setName] = useState(initialName);
   const [pendingDelete, setPendingDelete] = useState(false);
+  const rootURL = useContext(GlobalContext)?.rootURL
 
   const handleSubmit = async (event: React.FormEvent) => {
     if (id === undefined || id === null) {
@@ -19,7 +21,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
     }
     event.preventDefault();
     try {
-      await fetch(`https://localhost:8000/playlists/${id}`, {
+      await fetch(`${rootURL}/playlists/${id}`, {
         headers: {
           "Content-Type": "application/json", // or "multipart/form-data"
         },
@@ -38,7 +40,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
     }
     event.preventDefault();
     try {
-      const f =  await fetch(`https://localhost:8000/playlists/${id}`, {
+      const f =  await fetch(`${rootURL}/playlists/${id}`, {
         method: "DELETE", 
       })
       console.log(f.ok)

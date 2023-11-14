@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import Input from "./Input";
 import Button from "./Button";
 import Label from "./Label";
+import GlobalContext from "../contexts/GlobalContext";
 
 interface FormComponentProps {
   onSuccess: () => Promise<void>
@@ -14,13 +15,13 @@ type Config = {
 const ConfigForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
   const [rootFolderPath, setRootFolderPath] = useState<string>("");
   const [error, setError] = useState<string | null>()
+  const rootURL = useContext(GlobalContext)?.rootURL 
 
   useEffect(() => {
     const get = async () => {
       try {
-        const response = await fetch("https://localhost:8000/config", {method: "GET"})
+        const response = await fetch(`${rootURL}/config`, {method: "GET"})
         const json = await response.json() as Config
-        console.log(json)
         setRootFolderPath(json.folder_path)
       } catch (error) {
         console.log(error)
@@ -32,7 +33,7 @@ const ConfigForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      const response = await fetch(`https://localhost:8000/config`, {
+      const response = await fetch(`${rootURL}/config`, {
         headers: {
           "Content-Type": "application/json",
         },
