@@ -46,6 +46,8 @@ func UpdateConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println(formData.RootFolderPath)
+
 	rootFolderPath := formData.RootFolderPath
 
     if _, err = os.Stat(rootFolderPath); errors.Is(err, os.ErrNotExist) {

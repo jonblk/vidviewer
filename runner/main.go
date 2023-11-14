@@ -58,13 +58,13 @@ func testRepositories() error {
 	return err
 }
 
-func buildClient() error {
+func buildClient(mode string) error {
 	// Build React app
-	buildCmd := exec.Command("npm", "run", "build")
-	buildCmd.Dir = "./client"
-	buildCmd.Stdout = os.Stdout
-	buildCmd.Stderr = os.Stderr
-	err := buildCmd.Run()
+	cmd := exec.Command("sh", "-c", "./node_modules/.bin/tsc && ./node_modules/.bin/vite build --mode " + mode)
+	cmd.Dir = "./client"
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
 	return err
 }
 
@@ -99,16 +99,17 @@ func runServer(buildPath string, mode string) (*os.Process, error) {
 
 	err := cmd.Start()
 
-	log.Println("Running server, with process id:", cmd.Process.Pid)
 
 	if err != nil {
 		return nil, err 
-	}
+	} 
+
+	log.Println("Running server, with process id:", cmd.Process.Pid)
 
 	return cmd.Process, nil 
 }
 
-func runE2E(server_port string, empty_library_path string) {
+func runE2E(server_port string, empty_library_path string, sample_library_path string) {
 	cmd := exec.Command(
 		"npx", 
 		"cypress", 
@@ -118,6 +119,7 @@ func runE2E(server_port string, empty_library_path string) {
 	cmd.Env = append(
 		os.Environ(), 
 		"CYPRESS_EMPTY_LIBRARY_PATH=" + empty_library_path, 
+		"CYPRESS_SAMPLE_LIBRARY_PATH=" + sample_library_path, 
 		"CYPRESS_SERVER_PORT=" + server_port,
 		//"DEBUG=cypress:*",
 	)
@@ -154,7 +156,12 @@ func main() {
 
 	empty_library_path, err := filepath.Abs("./tests/sample_library_empty")
     if err != nil {
-		log.Println("Error getting absolute path", empty_library_path)
+		log.Fatal("Error getting absolute path ", empty_library_path)
+	}
+
+    sample_library_path, err := filepath.Abs("./tests/sample_library")
+    if err != nil {
+		log.Fatal("Error getting absolute path ", empty_library_path)
 	}
 
     // Get the path to the .env file
@@ -170,6 +177,9 @@ func main() {
 	// Access the environment variables
     serverPort := os.Getenv("SERVER_PORT")
     clientPort := os.Getenv("CLIENT_DEV_PORT")
+
+    serverPortTest := os.Getenv("SERVER_PORT_TEST")
+    clientPortTest := os.Getenv("CLIENT_DEV_PORT_TEST")
 
 	switch *mode {
 
@@ -190,7 +200,7 @@ func main() {
 			log.Fatalf("Server repositories tests failed: %v", err)
 		}
 
-		err = buildClient()
+		err = buildClient("test")
 		if err != nil {
 			log.Fatalf("Building client failed: %v", err)
 		}
@@ -210,8 +220,8 @@ func main() {
 			"./../tests/app",  // build path
 			"main.go",  					 // source
 			"./server", 					 // directory to run 
-			serverPort,
-			clientPort,
+			serverPortTest,
+			clientPortTest,
 		)
 
 		if err != nil {
@@ -235,7 +245,7 @@ func main() {
 		} 
 
 		// Run the e2e tests
-		runE2E(serverPort, empty_library_path)
+		runE2E(serverPortTest, empty_library_path, sample_library_path)
 
 		if server_process != nil {
 			err = server_process.Kill()
@@ -245,8 +255,10 @@ func main() {
 			log.Fatalf("Failed to terminate server process %v", err)
 		}
 
+		RemoveContents(empty_library_path)
+
 	case "dev":
-        err := buildClient()
+        err := buildClient("dev")
 		if err != nil {
 			log.Fatalf("Building client failed: %v", err)
 		}
@@ -262,6 +274,8 @@ func main() {
 			log.Fatalf("Failed to move build directory: %v", err)
 		}
 
+		
+
 		// Run react server in dev mode
         client_cmd := exec.Command("npm", "run", "dev")
 		client_cmd.Dir = "./client"
@@ -273,9 +287,22 @@ func main() {
 			log.Fatalln("Error starting client server", err)
 		}
 
-      	// Run the server in test mode
+        // Build Server
+        err = buildServer(
+			"./../build/app",  // build path
+			"main.go",  					 // source
+			"./server", 					 // directory to run 
+			serverPort,
+			clientPort,
+		)
+
+		if err != nil {
+			log.Fatalf("Failed to build server: %v", err)
+		} 
+
+      	// Run the server in dev mode
 		server_process, err := runServer(
-			"./tests/app", 
+			"./build/app", 
 			"dev", 
 		)
 

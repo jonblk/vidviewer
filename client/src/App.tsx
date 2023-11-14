@@ -14,10 +14,8 @@ import ConfigForm from './components/ConfigForm';
 import AddVideoModal from './components/AddVideoModal';
 import GlobalContext from './contexts/GlobalContext';
 
-const env_server_port: string | undefined = process.env.SERVER_PORT
 let rootURL: string
-
-
+const env_server_port: string | undefined = process.env.SERVER_PORT
 const websocketPath = `wss://localhost:${process.env.SERVER_PORT}/websocket`
 
 if (env_server_port === undefined) {
