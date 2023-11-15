@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -47,6 +48,62 @@ func getAvailablePort() (string) {
 	}
 
 	return ""
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	return err
+}
+
+func copyDir(src, dst string) error {
+	si, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !si.IsDir() {
+		return copyFile(src, dst)
+	}
+
+	err = os.MkdirAll(dst, si.Mode())
+	if err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			err = copyDir(srcPath, dstPath)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = copyFile(srcPath, dstPath)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func testRepositories() error {
@@ -195,7 +252,17 @@ func main() {
 		// Delete the empty sample library so it is empty for tests
 		RemoveContents(empty_library_path)
 
-		err := testRepositories()
+		// Reset sample library
+		err := os.RemoveAll("test/sample_library")
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = copyDir("tests/sample_library_original", "tests/sample_library")
+		if err != nil {
+			panic(err)
+		}
+
+		err = testRepositories()
 		if err != nil {
 			log.Fatalf("Server repositories tests failed: %v", err)
 		}

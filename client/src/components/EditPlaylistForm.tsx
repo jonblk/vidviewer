@@ -91,7 +91,8 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
         <>
           Delete this playlist? 
           <Button
-          type="submit"
+          dataTestid="cancel-delete-button"
+          type="button"
           color="neutral"
           onClick={() => setPendingDelete(false)}
         >
@@ -99,8 +100,8 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
         </Button>
 
         <Button
-          dataTestid="delete-playlist"
-          type="submit"
+          dataTestid="delete-playlist-button"
+          type="button"
           color="danger"
           onClick={(e: React.FormEvent<Element>) => {handleDelete(e).catch(e=>console.log(e))}}
         >

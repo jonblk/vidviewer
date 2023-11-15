@@ -29,10 +29,10 @@ const NewPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
   return (
     <form className="flex-col flex w-full">
       <div className="mb-4 w-full">
-        <Label htmlFor="name">
+        <Label htmlFor="playlist-name">
           New Playlist
         </Label>
-        <Input autoFocus={true} label="New Playlist" type="text" id="name" value={name} onChange={event=>setName(event.target.value)} />
+        <Input autoFocus={true} label="New Playlist" type="text" id="playlist-name" value={name} onChange={event=>setName(event.target.value)} />
       </div>
       <div className="flex items-center gap-4 ">
         <Button dataTestid="create-playlist-button" color="primary" type="submit" onClick={handleSubmit}>

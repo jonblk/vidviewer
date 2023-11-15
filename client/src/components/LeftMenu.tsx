@@ -29,7 +29,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({playlists, selectedPlaylist, onClick
         {playlists.map((playlist) => (
           <div key={playlist.id} className="flex justify-between group">
             <button
-              data-testid={playlist.id}
+              data-testid={`playlist-${playlist.name}`}
               className={`hover:cursor-pointer w-full flex items-center gap-1 dark:hover:text-neutral-100 ${
                 playlist.id === selectedPlaylist?.id
                   ? "text-neutral-950  dark:text-neutral-100"
@@ -47,7 +47,7 @@ const LeftMenu: React.FC<LeftMenuProps> = ({playlists, selectedPlaylist, onClick
               // dont show edit button if it's 'All' playlist
               playlist.id !== 0 && (
                 <div
-                  data-testid={`edit-playlist-button-${playlist.id}`}
+                  data-testid={`edit-playlist-button-${playlist.name}`}
                   onClick={() => onClickOpenEditPlaylistMenu(playlist)}
                   className="flex items-center space-x-2 p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 hover:cursor-pointer rounded-full dark:text-neutral-400 dark:hover:text-white"
                 >

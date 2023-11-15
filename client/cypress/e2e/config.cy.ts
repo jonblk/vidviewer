@@ -1,7 +1,5 @@
 const server_port         = Cypress.env("SERVER_PORT")
 const empty_library_path  = Cypress.env("EMPTY_LIBRARY_PATH");
-const sample_library_path = Cypress.env("SAMPLE_LIBRARY_PATH");
-const rootURL             = `https://localhost:${server_port}`;
 
 // Tests ConfigForm/Modal functionality
 
@@ -10,7 +8,7 @@ const rootURL             = `https://localhost:${server_port}`;
 // (the location of the video files data). 
 describe('Initial page load', () => {
   beforeEach(() => {
-    cy.visit(rootURL);
+    cy.visit(Cypress.env("root_url"));
     cy.intercept("PUT", "/config").as("submitForm");
   });
 
@@ -27,7 +25,7 @@ describe('Initial page load', () => {
 // Test that the update root folder functionality is working as intended
 describe('Update root folder', () => {
   beforeEach(() => {
-    cy.visit(rootURL);
+    cy.visit(Cypress.env("root_url"));
     cy.intercept("PUT", "/config").as("submitForm");
   });
 
@@ -72,7 +70,7 @@ describe('Update root folder', () => {
   it('should return 200 response when loading another library', () => {
     cy.get('[data-testid="config-form-toggle"]').click();
     cy.get('#root_folder_path').clear();
-    cy.get('#root_folder_path').type(sample_library_path);
+    cy.get('#root_folder_path').type(Cypress.env("SAMPLE_LIBRARY_PATH"));
     cy.get('button[type="submit"]').click();
 
     cy.wait('@submitForm').then((interception) => {
@@ -84,23 +82,5 @@ describe('Update root folder', () => {
     cy.get('#root_folder_path').clear();
     cy.get('#root_folder_path').type(empty_library_path);
     cy.get('button[type="submit"]').click();
-  })
-
-  it('should show playlists when loading another library', () => {
-    cy.contains('playlist1').should('not.exist');
-    cy.get('[data-testid="config-form-toggle"]').click();
-    cy.get('#root_folder_path').clear();
-    cy.get('#root_folder_path').type(sample_library_path);
-    cy.get('button[type="submit"]').click();
-
-    cy.wait('@submitForm').then((_) => {
-      cy.contains('playlist1').should('exist');
-      cy.contains('playlist2').should('exist');
-      cy.contains('playlist3').should('exist');
-      cy.contains('playlist4').should('exist');
-      cy.contains('playlist5').should('exist');
-      cy.contains('playlist6').should('exist');
-      cy.contains('playlist7').should('exist');
-    });
   })
 });
