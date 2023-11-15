@@ -65,10 +65,8 @@ describe('Playlists', () => {
     cy.contains('playlist2').trigger('mouseover')
     cy.get(`[data-testid=edit-playlist-button-playlist2]`).click()
     cy.get(`[data-testid=warn-delete-playlist]`).click();
-    cy.screenshot("before delete")
     cy.get(`[data-testid=cancel-delete-button]`).click();
     cy.contains('Delete this playlist?').should('not.exist')
-    cy.screenshot("after delete")
     cy.get('#playlist-name').should('exist')
   });
 

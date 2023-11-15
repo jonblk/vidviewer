@@ -213,12 +213,12 @@ func main() {
 
 	empty_library_path, err := filepath.Abs("./tests/sample_library_empty")
     if err != nil {
-		log.Fatal("Error getting absolute path ", empty_library_path)
+		log.Fatal("Error getting absolute path ", err)
 	}
 
-    sample_library_path, err := filepath.Abs("./tests/sample_library")
+    sample_library_path, err := filepath.Abs("./tests/sample_library_temp")
     if err != nil {
-		log.Fatal("Error getting absolute path ", empty_library_path)
+		log.Fatal("Error getting absolute path ", err)
 	}
 
     // Get the path to the .env file
@@ -252,12 +252,13 @@ func main() {
 		// Delete the empty sample library so it is empty for tests
 		RemoveContents(empty_library_path)
 
-		// Reset sample library
-		err := os.RemoveAll("test/sample_library")
+		// Delete temp sample library
+		err := os.RemoveAll("tests/sample_library_temp")
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
-		err = copyDir("tests/sample_library_original", "tests/sample_library")
+
+		err = copyDir("tests/sample_library", "tests/sample_library_temp")
 		if err != nil {
 			panic(err)
 		}
@@ -323,6 +324,11 @@ func main() {
 		}
 
 		RemoveContents(empty_library_path)
+		// Delete temp sample library
+		err = os.RemoveAll("tests/sample_library_temp")
+		if err != nil {
+			log.Println(err)
+		}
 
 	case "dev":
         err := buildClient("dev")
