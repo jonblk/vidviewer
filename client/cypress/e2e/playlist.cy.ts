@@ -19,13 +19,9 @@ describe('Playlists', () => {
   });
 
   it('should show playlists after loading library', () => {
-    cy.contains('playlist1').should('exist');
-    cy.contains('playlist2').should('exist');
-    cy.contains('playlist3').should('exist');
-    cy.contains('playlist4').should('exist');
-    cy.contains('playlist5').should('exist');
-    cy.contains('playlist6').should('exist');
-    cy.contains('playlist7').should('exist');
+    for (let playlist of Cypress.env("playlists") as string[]) {
+      cy.contains(playlist).should('exist');
+    }
   })
 
   it('should show `All` playlist', () => {

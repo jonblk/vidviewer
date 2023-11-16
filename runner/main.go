@@ -1,54 +1,18 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"syscall"
 
 	"github.com/joho/godotenv"
 )
-
-func isPortAvailable(host string, port string) bool {
-	lc := net.ListenConfig{
-		Control: func(network, address string, c syscall.RawConn) error {
-			var opErr error
-			err := c.Control(func(fd uintptr) {
-				opErr = syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
-			})
-			if err != nil {
-				return err
-			}
-			return opErr
-		},
-	}
-
-	listener, err := lc.Listen(context.Background(), "tcp", net.JoinHostPort(host, port))
-	if err != nil {
-		fmt.Println("Listening error:", err)
-		return false
-	}
-	defer listener.Close()
-	return true
-}
-
-func getAvailablePort() (string) {
-	check_ports  := []string{"8080", "8081", "8082", "8083", "8084", "8085", "8086"}
-
-	for _, port := range check_ports {
-		if isPortAvailable("localhost", port) {
-			return port
-		} 
-	}
-
-	return ""
-}
 
 func copyFile(src, dst string) error {
 	in, err := os.Open(src)
@@ -161,8 +125,6 @@ func runServer(buildPath string, mode string) (*os.Process, error) {
 		return nil, err 
 	} 
 
-	log.Println("Running server, with process id:", cmd.Process.Pid)
-
 	return cmd.Process, nil 
 }
 
@@ -208,6 +170,7 @@ func RemoveContents(dir string) error {
 }
 
 func main() {
+
 	mode := flag.String("mode", "production", "run mode")
 	flag.Parse()
 
@@ -215,6 +178,13 @@ func main() {
     if err != nil {
 		log.Fatal("Error getting absolute path ", err)
 	}
+	// Create a channel to receive OS signals
+	sigs := make(chan os.Signal, 1)
+
+	// `signal.Notify` registers the given channel to
+	// receive notifications of the specified signals.
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
 
     sample_library_path, err := filepath.Abs("./tests/sample_library_temp")
     if err != nil {
@@ -323,12 +293,16 @@ func main() {
 			log.Fatalf("Failed to terminate server process %v", err)
 		}
 
-		RemoveContents(empty_library_path)
-		// Delete temp sample library
-		err = os.RemoveAll("tests/sample_library_temp")
-		if err != nil {
-			log.Println(err)
-		}
+		defer func(){
+			RemoveContents(empty_library_path)
+
+			// Delete temp sample library
+			err = os.RemoveAll("tests/sample_library_temp")
+			if err != nil {
+				log.Println(err)
+			}
+		}()
+		
 
 	case "dev":
         err := buildClient("dev")
@@ -410,4 +384,28 @@ func main() {
 	default:
 		log.Fatalf("Invalid mode: %s", *mode)
 	}
+
+
+
+
+
+	// The program will wait here until it gets the
+	// expected signal (Ctrl+C) from the OS.
+	sig := <-sigs
+	fmt.Println()
+	fmt.Println(sig)
+
+
+	// Delete the empty sample library so it is empty for tests
+	RemoveContents(empty_library_path)
+
+	// Delete temp sample library
+	err = os.RemoveAll("tests/sample_library_temp")
+	if err != nil {
+		log.Println(err)
+	}
+
+	os.Exit(0)
+
+
 }

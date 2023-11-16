@@ -44,6 +44,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode, openAddVideoMe
             </button>
 
             <button
+              data-testid="new-video-toggle"
               className={
                 "rounded-full bg-neutral-200 hover:bg-opacity-60 dark:bg-neutral-800  dark:hover:bg-neutral-700 w-9 h-9 flex items-center justify-center"
               }

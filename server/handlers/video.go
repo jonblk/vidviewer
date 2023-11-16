@@ -238,6 +238,7 @@ func GetVideoFormats(w http.ResponseWriter, r *http.Request) {
   // TEMPORARY
 	formats, err := ytdlp.GetFormats(urlParam)
 
+
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

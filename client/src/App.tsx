@@ -11,7 +11,7 @@ import { useDarkMode } from './hooks/useDarkMode';
 import { useWebSocket } from 'react-use-websocket/dist/lib/use-websocket';
 import { useEvent } from './hooks/useEvent';
 import ConfigForm from './components/ConfigForm';
-import AddVideoModal from './components/AddVideoModal';
+import AddVideoModal from './components/NewVideoForm';
 import GlobalContext from './contexts/GlobalContext';
 
 let rootURL: string
