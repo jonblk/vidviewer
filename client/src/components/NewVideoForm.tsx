@@ -48,11 +48,7 @@ export default function AddVideoModal({
   const [isFetchingVideoFormats, setIsFetchingVideoFormats] = useState(false);
   const [folder, setFolder] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
-
   const [isFetchingSubmit, setIsFetchingSubmit] = useState(false);
-
-
-    console.log(playlists)
 
   const handlePlaylistChange = (option: Option) => {
     const playlist = playlists.find(p=>p.id === +option.value)
@@ -118,8 +114,6 @@ export default function AddVideoModal({
       setErrors(["Please enter a valid URL"]);
       return;
     }
-
-
 
     const data: FormData = {
       source: type.value === 1 ? "disk" : "ytdlp",
@@ -269,6 +263,7 @@ export default function AddVideoModal({
 
       {/* Submit button*/}
       <Button
+        dataTestid="download-video-button"
         onClick={handleSubmit}
         color="primary"
         disabled={isFetchingSubmit}

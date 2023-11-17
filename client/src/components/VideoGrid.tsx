@@ -55,8 +55,8 @@ export const getGridState = () => {
 }
 
 /*
-   Displays the videos belonging to a playlist.
-   When a video is clicked, the videoGrid state is saved to localStorage. 
+  Displays the videos belonging to a playlist.
+  When a video is clicked, the videoGrid state is saved to localStorage. 
 */
 const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, onClickOpenVideo, onClickEditVideo}) => {
   const [page, setPage] = useState(1);

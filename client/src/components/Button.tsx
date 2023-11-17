@@ -28,7 +28,7 @@ const Button: React.FC<ButtonProps> = ({ onClick, dataTestid, type, disabled, ch
       type={type}
       className={c + " py-1 px-4 w-full rounded flex items-center justify-center"}
       onClick={onClick}
-      disabled={disabled}
+      disabled={!!disabled}
     >
       {children}
     </button>

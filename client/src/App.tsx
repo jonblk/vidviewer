@@ -150,11 +150,7 @@ const App: React.FC = () => {
   }, [readyState]);
 
   const onVideoDownloadSuccess = useEvent(() => {
-    // Update the UI
-    if (selectedPlaylist) {
-      //setLastUpdate(Date.now())
-      //fetchPlaylistVideos(selectedPlaylist.id).catch((e) => console.log(e));
-    }
+    // TODO - Update the UI
   });
 
   // Setup websocket connection
@@ -170,6 +166,7 @@ const App: React.FC = () => {
           console.error("Video download failed");
         } else if (message.type === VIDEO_DOWNLOAD_SUCCESS) {
           console.log("Video download complete");
+          //console.log(message.payload);
           onVideoDownloadSuccess();
         } else if (message.type === ROOT_FOLDER_NOT_FOUND) {
           setIsConfigMissing(true);
