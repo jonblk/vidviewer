@@ -97,7 +97,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose, onClickEditVi
       <div className="w-full flex justify-center">
         <div className="w-[55%] pt-4 py-10">
           <div className="flex justify-between items-start">
-            <h1 className="text-lg">{video.title}</h1>
+            <h1 data-testid={`video-title-${video.title}`} className="text-lg">{video.title}</h1>
             <div className="text-neutral-300 flex items-center gap-2"></div>
           </div>
           <div className="flex items-center gap-2">

@@ -25,6 +25,7 @@ const GridItem: React.FC<GridItemProps> = ({
   return (
     <div>
       <div
+        data-testid={`video-thumbnail-${video.title}`}
         className="flex flex-col relative gap-1 overflow-hidden"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -41,21 +42,27 @@ const GridItem: React.FC<GridItemProps> = ({
         </div>
         {isHovered && (
           <div
+            data-testid={`video-hovered-thumbnail-${video.title}`}
             onClick={() => onClickOpenVideo(video)}
             className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg hover:cursor-pointer"
           >
-            <FiPlay size={40} color="#f1f1f1f1" />
+            <FiPlay data-testid="video-item-play-icon" size={40} color="#f1f1f1f1" />
             <div
-              onClick={(e) => {e.stopPropagation(); onClickEditVideo(video)}}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClickEditVideo(video);
+              }}
               className="absolute bg-none hover:cursor-pointer  rounded-tr-lg rounded-bl-lg p-0.5 px-2 text-xs font-semibold text-white text-opacity-50 hover:text-opacity-100 top-0 right-0 z-10 "
             >
-              <FiMoreHorizontal size={"1.1rem"}/>
+              <FiMoreHorizontal data-testid="video-item-more-icon" size={"1.1rem"} />
             </div>
           </div>
         )}
       </div>
 
-      <h3 data-testid={`video-grid-item-${video.id}`} className="mt-2  dark:text-neutral-200 ">
+      <h3
+        className="mt-2  dark:text-neutral-200 "
+      >
         {title.length > 45 ? title.slice(0, 65) + "..." : title}
       </h3>
     </div>

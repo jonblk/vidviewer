@@ -37,6 +37,8 @@ describe('Download video', () => {
     cy.contains('li', 'Invalid url').should('exist');
   })
 
+  it.skip('raises error when trying to download video that was previously downloaded')
+
   it('fetches resolution options when valid video URL is typed', () => {
     cy.get('input[id="url"]').type('https://archive.org/details/night_of_the_living_dead')
     cy.get('[data-testid="dropdown-button-video_format"]').click()

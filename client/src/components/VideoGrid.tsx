@@ -157,11 +157,13 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, on
         onChange={(e) => handleSearchUpdate(e.target.value)}
         value={search}
         id="search"
+        data-testid="video-grid-search"
       />
       </div>
       
       <div className="w-[30%]">
       <Dropdown 
+        id="video-grid-sort-by"
         selected={sortOptions[sortBy]}
         onSelect={v => handleSortByUpdate(v.value as number)}
         isFetching={false}
@@ -169,11 +171,12 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, on
         options={sortOptions}
       /></div>
     </div>
-    <div className="flex flex-wrap pr-10 pt-2">
+    <div data-testid="video-grid-container" className="flex flex-wrap pr-10 pt-2">
       { /* Render video thumbnails */ }
       {
         videos.map((video) => (
-            !video.removed && <div key={video.id} className="w-full pl-4 md:w-1/2 lg:w-1/4 mb-8">
+            !video.removed && <div data-testid={`video-grid-item-${video.title}`} key={video.id} className="w-full pl-4 md:w-1/2 lg:w-1/4 mb-8">
+        
             <VideoGridItem
               {...{
                 ...video,

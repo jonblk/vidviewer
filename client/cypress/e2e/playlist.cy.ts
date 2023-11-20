@@ -27,6 +27,9 @@ describe('Playlists', () => {
   it('should show `All` playlist', () => {
     cy.contains('All').should('exist');
   })
+
+  // TODO
+  it.skip('should not show edit icon when `All` playlist item hovered')
   
   it('should show edit icon when playlist item hovered', () => {
     cy.get(`[data-testid=edit-playlist-button-playlist1]`).should('not.exist')
