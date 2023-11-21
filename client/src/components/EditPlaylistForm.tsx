@@ -68,7 +68,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
       <div className="flex flex-col gap-3 ">
         {/* Update button */}
         {!pendingDelete && <Button
-          dataTestid="update-playlist"
+          data-testid="update-playlist"
           color="primary"
           type="submit"
           onClick={(e: React.FormEvent<Element>) => {handleSubmit(e).catch(e=>console.log(e))}}
@@ -78,7 +78,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
 
         {!pendingDelete && 
         <Button
-          dataTestid="warn-delete-playlist"
+          data-testid="warn-delete-playlist"
           type="button"
           color="neutral"
           onClick={() => setPendingDelete(true)}
@@ -91,7 +91,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
         <>
           Delete this playlist? 
           <Button
-          dataTestid="cancel-delete-button"
+          data-testid="cancel-delete-button"
           type="button"
           color="neutral"
           onClick={() => setPendingDelete(false)}
@@ -100,7 +100,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
         </Button>
 
         <Button
-          dataTestid="delete-playlist-button"
+          data-testid="delete-playlist-button"
           type="button"
           color="danger"
           onClick={(e: React.FormEvent<Element>) => {handleDelete(e).catch(e=>console.log(e))}}

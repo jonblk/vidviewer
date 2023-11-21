@@ -9,21 +9,47 @@
 // https://on.cypress.io/custom-commands
 // ***********************************************
 
-Cypress.Commands.add('isDarkMode', () => cy.wrap(Cypress.$('body').hasClass('dark')));
+Cypress.Commands.add('addVideoFromDisk', (playlistTitle, path) => {
+  // Select Disk option
+  cy.get('[data-testid="dropdown-button-source"]').click();
+  cy.get('[data-testid="option-source-📂 Disk"]').click();
+
+  // Input folder path
+  cy.get('[data-testid="folder-path-input"]').clear();
+  cy.get('[data-testid="folder-path-input"]').type(path);
+
+  // Select playlist
+  cy.get('[data-testid="dropdown-button-playlist"]').click();
+  cy.get(`[data-testid=option-playlist-${playlistTitle}]`).scrollIntoView().click();
+
+  // Click download
+  cy.get(`[data-testid=download-video-button]`).click();
+})
+
+Cypress.Commands.add('isDarkMode', () => {
+  cy.wrap(Cypress.$('body').hasClass('dark'))
+});
+
+Cypress.Commands.add(
+  'closeModal', 
+  () => cy.get('[data-testid="close-modal-button"').click()
+)
 
 Cypress.Commands.add('setRootPath', () => {
- cy.visit(Cypress.env('root_url'));
+  cy.visit(Cypress.env('root_url'));
 
   cy.get('body').then($body => {
-   if ($body.find('#root_folder_path').length > 0) {
-     cy.get('#root_folder_path').type(Cypress.env("SAMPLE_LIBRARY_PATH"));
-     cy.get('button[type="submit"]').click();
-   } else {
-     cy.get('[data-testid="config-form-toggle"]').click();
-     cy.get('#root_folder_path').clear();
-     cy.get('#root_folder_path').type(Cypress.env("SAMPLE_LIBRARY_PATH"));
-     cy.get('button[type="submit"]').click();
-   }
+    cy.wait(500).then(() => {
+      if ($body.find("#root_folder_path").length > 0) {
+        cy.get("#root_folder_path").type(Cypress.env("SAMPLE_LIBRARY_PATH"));
+        cy.get('button[type="submit"]').click();
+      } else {
+        cy.get('[data-testid="config-form-toggle"]').click();
+        cy.get("#root_folder_path").clear();
+        cy.get("#root_folder_path").type(Cypress.env("SAMPLE_LIBRARY_PATH"));
+        cy.get('button[type="submit"]').click();
+      }
+    });
  });
 });
 
@@ -31,6 +57,8 @@ declare namespace Cypress {
  interface Chainable {
    setRootPath: () => void;
    isDarkMode: () => Chainable<boolean>;
+   closeModal: () => void; 
+   addVideoFromDisk: (playlistTitle: string, filePath: string) => void;
  }
 }
 

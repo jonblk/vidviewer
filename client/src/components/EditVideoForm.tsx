@@ -111,16 +111,22 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
           Delete this video?
           <p className="text-neutral-400">"{title}"</p>
           <Button
+            data-testid="cancel-video-delete"
             type="submit"
             color="neutral"
-            onClick={() => setPendingDelete(false)}
+            onClick={(e: React.FormEvent) => { e.preventDefault(); setPendingDelete(false)}}
           >
             Cancel
           </Button>
-          <Button type="submit" color="danger" onClick={(event: React.FormEvent) => {
-            event.preventDefault();
-            handleDelete().catch(e=>console.log(e));
-          }}>
+          <Button
+            data-testid="confirm-video-delete"
+            type="submit"
+            color="danger"
+            onClick={(event: React.FormEvent) => {
+              event.preventDefault();
+              handleDelete().catch((e) => console.log(e));
+            }}
+          >
             Delete
           </Button>
         </div>
@@ -135,11 +141,12 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
               id="title"
               value={title ? title : ""}
               onChange={(event) => {
-                event.preventDefault()
-                handleTitleChange(event.target.value).catch(e=>console.log(e))
-                setName(event.target.value)
-              }
-              }
+                event.preventDefault();
+                handleTitleChange(event.target.value).catch((e) =>
+                  console.log(e)
+                );
+                setName(event.target.value);
+              }}
             />
           </div>
 
@@ -154,8 +161,14 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
                     checked: p.checked,
                   };
                 })}
-                onSelectionChange={(playlist_id: number, isChecked: boolean) => {
-                  handleTogglePlaylistVideo(playlist_id, isChecked ? "POST" : "DELETE").catch(e => console.log(e))
+                onSelectionChange={(
+                  playlist_id: number,
+                  isChecked: boolean
+                ) => {
+                  handleTogglePlaylistVideo(
+                    playlist_id,
+                    isChecked ? "POST" : "DELETE"
+                  ).catch((e) => console.log(e));
                 }}
               />
             </div>
@@ -163,16 +176,17 @@ const EditVideoForm: React.FC<FormComponentProps> = ({allPlaylists, onSuccess, i
         </div>
       )}
 
-<div className="flex flex-col gap-2 pt-5">
-      {!pendingDelete && (
-        <p
-          color="neutral"
-          className="hover:cursor-pointer w-4 hover:text-red-500 underline"
-          onClick={() => setPendingDelete(true)}
-        >
-          Delete
-        </p>
-      )}
+      <div className="flex flex-col gap-2 pt-5">
+        {!pendingDelete && (
+          <p
+            data-testid="toggle-video-delete-warning"
+            color="neutral"
+            className="hover:cursor-pointer w-4 hover:text-red-500 underline"
+            onClick={(e: React.FormEvent) => {e.preventDefault(); setPendingDelete(true)}}
+          >
+            Delete
+          </p>
+        )}
       </div>
     </form>
   );

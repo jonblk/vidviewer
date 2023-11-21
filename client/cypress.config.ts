@@ -12,7 +12,8 @@ export default defineConfig({
       'playlist5',
       'playlist6',
       'playlist7', 
-      'random',  
+      'random',
+      'test-delete'  
     ],
     root_url: `https://localhost:${process.env.CYPRESS_SERVER_PORT}`,
     ...process.env

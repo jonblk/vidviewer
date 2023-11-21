@@ -234,6 +234,7 @@ export default function AddVideoModal({
           </Label>
 
           <Input
+            data-testid = "folder-path-input"
             onChange={(v) => setFolder(v.target.value)}
             type="input"
             id="Folder Path"
@@ -263,7 +264,7 @@ export default function AddVideoModal({
 
       {/* Submit button*/}
       <Button
-        dataTestid="download-video-button"
+        data-testid="download-video-button"
         onClick={handleSubmit}
         color="primary"
         disabled={isFetchingSubmit}

@@ -243,6 +243,7 @@ const App: React.FC = () => {
                   setPlaylistVideos(vids);
                   break;
                 case VideoUpdateType.DELETE:
+                  setModalState(ModalState.none);
                   vids = playlistVideos.map((v) => {
                     if (v.id === videoUpdate.id) {
                       return { ...v, removed: true };
