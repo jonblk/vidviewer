@@ -128,11 +128,20 @@ func runServer(buildPath string, mode string) (*os.Process, error) {
 	return cmd.Process, nil 
 }
 
-func runE2E(server_port string, empty_library_path string, sample_library_path string) {
+func runE2E(isCypressHeadless bool, mode string, server_port string, empty_library_path string, sample_library_path string) {
+	var head string = ""
+	if !isCypressHeadless && mode == "run" {
+		head = "--headed" 
+	} 
+
+	if mode != "run" && mode != "open" {
+		log.Fatal("Unrecognized cypress mode, should be `open` or `run`")
+	}
 	cmd := exec.Command(
 		"npx", 
 		"cypress", 
-		"run", 
+		mode, 
+		head,
 	)
 
 	cmd.Env = append(
@@ -170,9 +179,13 @@ func RemoveContents(dir string) error {
 }
 
 func main() {
+	flag.String("headless", "", "run cypress headless mode")
 
+	cypressMode := flag.String("cypress_mode", "run", "run cypress mode")
 	mode := flag.String("mode", "production", "run mode")
 	flag.Parse()
+
+	var isCypressHeadless  = flag.Lookup("headless") != nil
 
 	empty_library_path, err := filepath.Abs("./tests/sample_library_empty")
     if err != nil {
@@ -283,7 +296,7 @@ func main() {
 		} 
 
 		// Run the e2e tests
-		runE2E(serverPortTest, empty_library_path, sample_library_path)
+		runE2E(isCypressHeadless, *cypressMode, serverPortTest, empty_library_path, sample_library_path)
 
 		if server_process != nil {
 			err = server_process.Kill()

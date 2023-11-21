@@ -24,6 +24,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleTheme, isDarkMode, openAddVideoMe
         <div className="flex items-center">
           <div className="flex gap-2">
             <button
+              data-testid="light-dark-toggle"
               className="rounded-full w-9 h-9 flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800"
               onClick={toggleTheme}
             >

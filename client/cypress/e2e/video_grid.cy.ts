@@ -1,9 +1,8 @@
-// Video grid variables 
-const totalVideoCount = 33;
-const title = "32";
-const itemsPerPage = 25;
+const totalVideoCount = 33; // the total number of videos in playlist (tests/sample_data db)
+const itemsPerPage = 25; 
 const playlist = 'random';  
 const playlistID = '8'
+const title = "32"; // title of video to use in testing
 
 const clickSortBy = (cy: Cypress.cy, option: 'Oldest'|'Latest') => {
   cy.get(`[data-testid="dropdown-button-video-grid-sort-by"]`).click();
@@ -11,17 +10,9 @@ const clickSortBy = (cy: Cypress.cy, option: 'Oldest'|'Latest') => {
 }
 
 const getVideosURL = () => `${Cypress.env('root_url')}/playlist/${playlistID}/videos*`
-  //`/playlist/${playlistID}/videos?page=${page}&limit=${itemsPerPage}&search=${search}&sortBy=${sortBy}` 
 
 describe('Video grid', () => {
-  // Open sample library
-  before(() => {
-    cy.visit(Cypress.env('root_url'));
-    cy.get('[data-testid="config-form-toggle"]').click();
-    cy.get('#root_folder_path').clear();
-    cy.get('#root_folder_path').type(Cypress.env("SAMPLE_LIBRARY_PATH"));
-    cy.get('button[type="submit"]').click();
-  });
+  before(() => cy.setRootPath())
 
   // Open root url and open playlist
   beforeEach(() => {
@@ -84,12 +75,12 @@ describe('Video grid', () => {
   }); 
 
   it('fetches more videos when scrolled to bottom of page', () => {
-    cy.get(`[data-testid="video-grid-container"]`).children('div[data-testid]').should('have.length', itemsPerPage); // -1 as there is scroll trigger element at bottom of this div
+    cy.get(`[data-testid="video-grid-container"]`).children('div[data-testid]').should('have.length', itemsPerPage); 
     cy.scrollTo('bottom');
     cy.get(`[data-testid="video-grid-container"]`).children('div[data-testid]').should('have.length', totalVideoCount);
   }) 
 
-  it('stops fetching videos when end reached', () => {
+  it('stops fetching videos when all playlist\'s videos have been fetched', () => {
     clickSortBy(cy, 'Oldest');
     const endpoint = getVideosURL();
     cy.intercept("GET", endpoint).as("getVideos");
