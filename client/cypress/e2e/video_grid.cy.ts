@@ -1,17 +1,16 @@
-const totalVideoCount = 33; // the total number of videos in playlist (tests/sample_data db)
-const itemsPerPage = 25; 
-const playlist = 'random';  
-const playlistID = '8'
-const title = "32"; // title of video to use in testing
-
 const clickSortBy = (cy: Cypress.cy, option: 'Oldest'|'Latest') => {
   cy.get(`[data-testid="dropdown-button-video-grid-sort-by"]`).click();
   cy.get(`[data-testid="option-video-grid-sort-by-${option}"]`).click();
 }
 
-const getVideosURL = () => `${Cypress.env('root_url')}/playlist/${playlistID}/videos*`
-
 describe('Video grid', () => {
+  const totalVideoCount = 33; // the total number of videos in playlist (tests/sample_data db)
+  const itemsPerPage = 25; 
+  const playlist = 'random';  
+  const playlistID = '8'
+  const title = "32"; // title of video to use in testing
+  const getVideosURL = () => `${Cypress.env('root_url')}/playlist/${playlistID}/videos*`
+
   before(() => cy.setRootPath())
 
   // Open root url and open playlist

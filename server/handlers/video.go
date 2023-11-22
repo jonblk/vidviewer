@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -317,13 +318,20 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 
   switch data.Source {
   case "disk":
-    loadVideosFromDisk(
-			data.Folder, 
-			fmt.Sprint(data.PlaylistID),
-      playlistVideoRepository,
-			videoRepository,
-			rootFolderPath, 
-		)
+    loadError := loadVideosFromDisk(
+		data.Folder, 
+		fmt.Sprint(data.PlaylistID),
+		playlistVideoRepository,
+		videoRepository,
+		rootFolderPath, 
+	)
+
+	if loadError != nil{
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Errors: []string{loadError.Error()}})
+		return
+	}
   case "ytdlp":
     ytdlpError := loadVideoWithYtdlp(
 			data.URL, 
@@ -412,6 +420,10 @@ func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo 
 	if err != nil {
 		log.Println("Error getting files", err)
 		return err
+	}
+
+	if len(paths) == 0 {
+		return errors.New("folder does not contain .mp4 or .webm files")
 	}
 
 	for _, path := range paths {
