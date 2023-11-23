@@ -107,16 +107,21 @@ const App: React.FC = () => {
   // Establish websocket connection
   const { lastMessage, readyState } = useWebSocket(websocketPath);
 
-  const fetchPlaylists = async (callback?: () => void) => {
+  const fetchPlaylists = async () => {
     try {
       const response = await fetch(`${rootURL}/playlists`);
       const data = (await response.json()) as Playlist[];
 
       setPlaylists(data);
 
-      if (callback) callback();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return data
     } catch (error) {
       console.error("Error fetching playlists:", error);
+      throw error
     }
   };
 
@@ -200,7 +205,10 @@ const App: React.FC = () => {
         {modalState === ModalState.addPlaylist && (
           <NewPlaylistForm
             onSuccess={() =>
-              fetchPlaylists(() => setModalState(ModalState.none))
+              fetchPlaylists()
+              .then(_ => {
+                setModalState(ModalState.none)
+              })
             }
           />
         )}
@@ -209,7 +217,9 @@ const App: React.FC = () => {
             id={selectedPlaylistEdit?.id}
             initialName={selectedPlaylistEdit?.name}
             onSuccess={() =>
-              fetchPlaylists(() => setModalState(ModalState.none))
+              fetchPlaylists().then(_ => {
+                setModalState(ModalState.none)
+              }) 
             }
           />
         )}
@@ -279,12 +289,12 @@ const App: React.FC = () => {
         )}
         {modalState == ModalState.config && (
           <ConfigForm
-            onSuccess={async () => {
+            onSuccess={() => {
               setIsConfigMissing(false);
               setModalState(ModalState.none);
-              return fetchPlaylists(() =>
-                setSelectedPlaylist(playlists[0])
-              ).catch((e) => console.log(e));
+              fetchPlaylists().then((data: Playlist[]) => {
+                setSelectedPlaylist(data[0])
+              });
             }}
           />
         )}
@@ -328,7 +338,7 @@ const App: React.FC = () => {
             <VideoGrid
               videos={playlistVideos}
               setVideos={setPlaylistVideos}
-              playlistId={selectedPlaylist.id}
+              playlist={selectedPlaylist}
               onClickEditVideo={onClickEditVideo}
               onClickOpenVideo={(v: Video) => {
                 setIsPlaying(true);

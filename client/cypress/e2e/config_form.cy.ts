@@ -1,6 +1,7 @@
 const server_port         = Cypress.env("SERVER_PORT")
 const empty_library_path  = Cypress.env("EMPTY_LIBRARY_PATH");
 
+
 // On initial page load when root folder is not found in config settings
 // a message should prompt user to enter a `root folder`
 // (the location of the video files data). 
@@ -27,7 +28,7 @@ describe('Update root folder', () => {
     cy.intercept("PUT", "/config").as("submitForm");
   });
 
-  it('should display an error message when invalid root folder path is submitted', () => {
+  it('displays an error message when invalid root folder path is submitted', () => {
     cy.contains('.text-red-500').should('not.exist');
     cy.get("#root_folder_path").type(' ');
     cy.get('button[type="submit"]').click();
@@ -35,7 +36,7 @@ describe('Update root folder', () => {
     cy.get('.text-red-500').should('be.visible');
   });
 
-  it('should close modal when valid root folder path is submitted', () => {
+  it('closes modal when valid root folder path is submitted', () => {
     cy.get('#root_folder_path').type(empty_library_path);
     cy.get('button[type="submit"]').click();
 
@@ -45,16 +46,16 @@ describe('Update root folder', () => {
     });
   });
 
-  it('should not show config modal when root path previously set', () => {
+  it('does not display config modal when root path previously set', () => {
     cy.contains('Root Folder').should('not.exist');
   })
 
-  it('should open config modal when user clicks on config icon', () => {
+  it('opens config modal when user clicks on config icon', () => {
     cy.get("[data-testid=config-form-toggle]").click();
     cy.contains('Root Folder').should('exist');
   })
 
-  it('should return 200 response when valid empty root folder is submitted', () => {
+  it('returns 200 response when valid empty root folder is submitted', () => {
     cy.get('[data-testid="config-form-toggle"]').click();
     cy.get('#root_folder_path').clear();
     cy.get('#root_folder_path').type(empty_library_path);
@@ -65,7 +66,7 @@ describe('Update root folder', () => {
     });
   })
 
-  it('should return 200 response when loading another library', () => {
+  it('returns 200 response when loading another library', () => {
     cy.get('[data-testid="config-form-toggle"]').click();
     cy.get('#root_folder_path').clear();
     cy.get('#root_folder_path').type(Cypress.env("SAMPLE_LIBRARY_PATH"));
@@ -80,5 +81,21 @@ describe('Update root folder', () => {
     cy.get('#root_folder_path').clear();
     cy.get('#root_folder_path').type(empty_library_path);
     cy.get('button[type="submit"]').click();
+  })
+
+  it('updates videos and playlists when updating root folder', () => {
+    // Visit sample folder
+    cy.setRootPath();  
+
+    cy.get(`[data-testid="video-grid-container"]`).children('div[data-testid]').then(($videos) => {
+      const videoCount = $videos.length;
+      expect(videoCount).to.be.greaterThan(1)
+
+      cy.setRootPath("EMPTY_LIBRARY_PATH");  
+      cy.get(`[data-testid="video-grid-container"]`).then(($el) => {
+        const videoCountAfterSwitch = $el.find('div[data-testid]').length
+        expect(videoCountAfterSwitch).to.equal(0);
+      });
+    });
   })
 });

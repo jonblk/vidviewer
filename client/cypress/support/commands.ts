@@ -35,18 +35,18 @@ Cypress.Commands.add(
   () => cy.get('[data-testid="close-modal-button"').click()
 )
 
-Cypress.Commands.add('setRootPath', () => {
+Cypress.Commands.add('setRootPath', (path="SAMPLE_LIBRARY_PATH") => {
   cy.visit(Cypress.env('root_url'));
 
   cy.get('body').then($body => {
     cy.wait(500).then(() => {
       if ($body.find("#root_folder_path").length > 0) {
-        cy.get("#root_folder_path").type(Cypress.env("SAMPLE_LIBRARY_PATH"));
+        cy.get("#root_folder_path").type(Cypress.env(path));
         cy.get('button[type="submit"]').click();
       } else {
         cy.get('[data-testid="config-form-toggle"]').click();
         cy.get("#root_folder_path").clear();
-        cy.get("#root_folder_path").type(Cypress.env("SAMPLE_LIBRARY_PATH"));
+        cy.get("#root_folder_path").type(Cypress.env(path));
         cy.get('button[type="submit"]').click();
       }
     });
@@ -55,7 +55,7 @@ Cypress.Commands.add('setRootPath', () => {
 
 declare namespace Cypress {
  interface Chainable {
-   setRootPath: () => void;
+   setRootPath: (path?: string) => void;
    isDarkMode: () => Chainable<boolean>;
    closeModal: () => void; 
    addVideoFromDisk: (playlistTitle: string, filePath: string) => void;

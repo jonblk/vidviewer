@@ -5,7 +5,7 @@ import Label from "./Label";
 import GlobalContext from "../contexts/GlobalContext";
 
 interface FormComponentProps {
-  onSuccess: () => Promise<void>
+  onSuccess: () => void
 }
 
 type Config = {

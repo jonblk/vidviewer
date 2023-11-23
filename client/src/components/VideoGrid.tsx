@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react"; import { Video } from "../App";
+import { useCallback, useContext, useEffect, useState } from "react"; import { Playlist, Video } from "../App";
 import VideoGridItem from "./VideoGridItem";
 import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
 import Spinner from "./Spinner";
@@ -7,7 +7,7 @@ import Dropdown  from "./Dropdown";
 import GlobalContext from "../contexts/GlobalContext";
 
 interface VideoGridProps {
-  playlistId: number;
+  playlist: Playlist;
   videos: Video[];
   setVideos:  React.Dispatch<React.SetStateAction<Video[]>>;
   onClickOpenVideo: (v: Video) => void;
@@ -58,7 +58,7 @@ export const getGridState = () => {
   Displays the videos belonging to a playlist.
   When a video is clicked, the videoGrid state is saved to localStorage. 
 */
-const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, onClickOpenVideo, onClickEditVideo}) => {
+const VideoGrid: React.FC<VideoGridProps> = ({ playlist, videos, setVideos, onClickOpenVideo, onClickEditVideo}) => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState(0)
@@ -99,22 +99,22 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, on
 
     try {
       const response = await fetch(
-        `${rootURL}/playlist/${playlistId}/videos?page=${page}&limit=${LIMIT}&search=${search}&sortBy=${sortBy}`
+        `${rootURL}/playlist/${playlist.id}/videos?page=${page}&limit=${LIMIT}&search=${search}&sortBy=${sortBy}`
       );
 
       const data = (await response.json()) as Video[];
 
       setHasMore(!(data.length < LIMIT));
 
-            setVideos((prevVideos) => page > 1 ? [...prevVideos, ...data] : data);
-
-
+      setVideos((prevVideos) =>
+        page > 1 ? [...prevVideos, ...data] : data
+      );
     } catch (e) {
       console.log(e);
     } finally {
       setIsFetching(false);
     }
-  }, [playlistId, setHasMore, setVideos, setIsFetching])
+  }, [playlist, setHasMore, setVideos, setIsFetching])
   
   // Scroll to previous position
   // Use 'savedPosition' to avoid calling scrollTo everytime the user scrolls
@@ -129,19 +129,17 @@ const VideoGrid: React.FC<VideoGridProps> = ({ playlistId, videos, setVideos, on
     const savedState = getGridState();
 
     if (savedState) {
-      setVideos(savedState.videos)
+      if (savedState.videos.length > 0) {
+        setVideos(savedState.videos)
+      } else {
+        fetchVideos(1, savedState.search, savedState.sortBy).catch(e=>console.log(e))
+      }
       setSearch(savedState.search)
       setPage(savedState.page)
       setPosition(savedState.position)
       setSavedPosition(savedState.position)
       setSortBy(savedState.sortBy)
-    } 
-
-    if (savedState && savedState.videos.length === 0) {
-      fetchVideos(1, savedState.search, savedState.sortBy).catch(e=>console.log(e))
-    }
-
-    if (!savedState) {
+    } else {
       fetchVideos(1, "", sortBy).catch(e=>console.log(e))
     }
   }, [fetchVideos, setVideos, setSearch, setPage, setPosition, setSavedPosition])
