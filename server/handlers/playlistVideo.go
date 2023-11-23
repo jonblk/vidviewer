@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -19,7 +20,7 @@ func DeletePlaylistVideo(w http.ResponseWriter, r *http.Request) {
   repositories := getRepositories(r)
   repo := repositories.PlaylistVideoRepo
 
-  body, err := ioutil.ReadAll(r.Body)
+  body, err := io.ReadAll(r.Body)
 
   if err != nil {
 	log.Println("Error reading request body")

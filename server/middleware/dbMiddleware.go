@@ -1,12 +1,15 @@
 package middleware
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"vidviewer/config"
 	"vidviewer/db"
 	"vidviewer/files"
 )
+
+const DBKey MiddleWareKey = "DB"
 
 //  Initializes DB (if nil) and passes it
 //  to handlers via router context
@@ -19,7 +22,6 @@ func DBMiddleware(next http.Handler) http.Handler {
 
 	    rootFolderPath := r.Context().Value(ConfigKey).(config.Config).FolderPath 
 		path := files.GetDatabasePath(rootFolderPath)
-
 		sql, exists := db.GetDB(path)
 
 		// Initialize DB if its nil
@@ -32,6 +34,9 @@ func DBMiddleware(next http.Handler) http.Handler {
 		if (sql == nil) {
 			log.Fatal("Failed to establish database connection")
 		}
+
+        ctx := context.WithValue(r.Context(), DBKey, sql)
+		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
 	})

@@ -14,6 +14,10 @@ func (repo *PlaylistVideoRepository) GetDB() *sql.DB {
   return *repo.db
 }
 
+func (repo *PlaylistVideoRepository) SetDB(sql *sql.DB) {
+	repo.db = &sql
+}
+
 func (repo *PlaylistVideoRepository) Get(playlist_id string, video_id string) (int64, error) {
   // Check if the row exists before trying to delete it
 	row := repo.GetDB().QueryRow("SELECT id FROM playlist_videos WHERE playlist_id = ? AND video_id = ?", playlist_id, video_id)

@@ -125,6 +125,8 @@ func runServer(buildPath string, mode string) (*os.Process, error) {
 		return nil, err 
 	} 
 
+	log.Println("Running server with process id:", cmd.Process.Pid)
+
 	return cmd.Process, nil 
 }
 
@@ -398,16 +400,11 @@ func main() {
 		log.Fatalf("Invalid mode: %s", *mode)
 	}
 
-
-
-
-
 	// The program will wait here until it gets the
 	// expected signal (Ctrl+C) from the OS.
 	sig := <-sigs
 	fmt.Println()
 	fmt.Println(sig)
-
 
 	// Delete the empty sample library so it is empty for tests
 	RemoveContents(empty_library_path)
@@ -419,6 +416,4 @@ func main() {
 	}
 
 	os.Exit(0)
-
-
 }

@@ -19,7 +19,7 @@ func ConfigMiddleware(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), ConfigKey, c)
 		r = r.WithContext(ctx)
 
-		// Continue to next handler (for initialization)
+		// skip middleware (for initialization)
         if (r.URL.Path == "/" || r.URL.Path == "/websocket" || r.URL.Path == "/config" || strings.HasPrefix(r.URL.Path, "/assets/")) {
 			next.ServeHTTP(w, r)
 			return

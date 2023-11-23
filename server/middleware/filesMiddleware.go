@@ -9,7 +9,6 @@ import (
 	ws "vidviewer/websocket"
 )
 
-// Loads the config and passes it to handlers via router context
 func FilesMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Continue to next handler (for initialization)

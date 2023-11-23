@@ -18,6 +18,10 @@ func (repo *VideoRepository) GetDB() *sql.DB {
   return *repo.db
 }
 
+func (repo *VideoRepository) SetDB(sql *sql.DB) {
+	repo.db = &sql
+}
+
 const ALL_PLAYLIST_ID string = "0"
 
 // Get the video

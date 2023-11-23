@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -75,7 +74,7 @@ func Update(newConfig Config) {
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile(getConfigFilePath(), data, 0644)
+	err = os.WriteFile(getConfigFilePath(), data, 0644)
 
 	if err != nil {
 		log.Println("Error writing file")
@@ -142,7 +141,7 @@ func Load() Config {
 
 	// NOTE this is being called on every request 
 	// Read/update from memory instead?
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 
 	if err != nil {
 		log.Println("Error reading config file!")

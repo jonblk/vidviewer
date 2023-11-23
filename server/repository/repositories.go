@@ -1,19 +1,15 @@
 package repository
 
-import (
-	"database/sql"
-)
-
 type Repositories struct {
     VideoRepo    VideoRepository
     PlaylistRepo PlaylistRepository
     PlaylistVideoRepo PlaylistVideoRepository
 }
 
-func NewRepositories(activeConnection **sql.DB) *Repositories {
-	videoRepo    := VideoRepository{db: activeConnection}
-	playlistRepo := PlaylistRepository{db: activeConnection}
-	playlistVideoRepo := PlaylistVideoRepository{db: activeConnection}
+func NewRepositories() *Repositories {
+	videoRepo    := VideoRepository{}
+	playlistRepo := PlaylistRepository{}
+	playlistVideoRepo := PlaylistVideoRepository{}
 
     return &Repositories{
         VideoRepo:   videoRepo,

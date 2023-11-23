@@ -55,7 +55,7 @@ func main() {
 	
 	db.InitializeDB()
 
-	repositories := repository.NewRepositories(&db.ActiveConnection)
+	repositories := repository.NewRepositories()
 
 	// Initialize routes
 	r := routes.Initialize(assets, htmlFiles, repositories)

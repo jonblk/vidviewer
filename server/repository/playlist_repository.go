@@ -14,6 +14,10 @@ func (repo *PlaylistRepository) GetDB() *sql.DB {
   return *repo.db
 }
 
+func (repo *PlaylistRepository) SetDB(sql *sql.DB) {
+	repo.db = &sql
+}
+
 // The default playlist 
 // Cannot be deleted, or modified by user
 var allPlaylist = models.Playlist {ID: 0, Name: "All", Date: "" }
