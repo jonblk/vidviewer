@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import LeftMenu from './components/LeftMenu';
-import VideoGrid, { getGridState, saveGridState } from './components/VideoGrid';
-import Video from './components/Video';
+import VideoGrid from './components/VideoGrid';
+import Video from './components/VideoPlayer';
 import Modal from './components/Modal';
 import EditPlaylistForm from './components/EditPlaylistForm';
 import NewPlaylistForm from './components/NewPlaylistForm';
@@ -13,6 +13,7 @@ import { useEvent } from './hooks/useEvent';
 import ConfigForm from './components/ConfigForm';
 import AddVideoModal from './components/NewVideoForm';
 import GlobalContext from './contexts/GlobalContext';
+import VideoPlayer from './components/VideoPlayer';
 
 let rootURL: string
 const env_server_port: string | undefined = process.env.SERVER_PORT
@@ -33,6 +34,7 @@ export interface Playlist {
 export interface Video {
   id: number;
   file_path: string;
+  download_date: string;
   file_id:  string;
   thumbnail_path: string;
   title: string;
@@ -87,10 +89,8 @@ const App: React.FC = () => {
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist>();
   const [isConfigMissing, setIsConfigMissing] = useState<boolean>();
 
-  const [isPlaying, setIsPlaying] = useState(false);
-
   // Current video that is open
-  const [selectedVideo, setSelectedVideo] = useState<Video>();
+  const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
 
   // Current playlist that is selected to be edited
   const [selectedPlaylistEdit, setSelectedPlaylistEdit] = useState<Playlist>();
@@ -101,11 +101,12 @@ const App: React.FC = () => {
   // Set the dark/light visual mode
   const [darkMode, toggleDarkMode] = useDarkMode();
 
-  // Playlist Videos
-  const [playlistVideos, setPlaylistVideos] = useState<Video[]>([])
-
   // Establish websocket connection
   const { lastMessage, readyState } = useWebSocket(websocketPath);
+
+  const [lastVideoUpdate, setLastVideoUpdate] = useState(Date.now())
+
+  const [videos, setVideos] = useState<Video[]>([]);
 
   const fetchPlaylists = async () => {
     try {
@@ -233,57 +234,49 @@ const App: React.FC = () => {
               let vids;
               switch (videoUpdate.type) {
                 case VideoUpdateType.ADD_TO_PLAYLIST:
-                  vids = playlistVideos.map((v) => {
+                  vids = videos.map((v) => {
                     if (v.id === videoUpdate.id) {
                       return { ...v, removed: false };
                     } else {
                       return v;
                     }
                   });
-                  setPlaylistVideos(vids);
                   break;
                 case VideoUpdateType.REMOVE_FROM_PLAYLIST:
-                  vids = playlistVideos.map((v) => {
+                  vids = videos.map((v) => {
                     if (v.id === videoUpdate.id) {
                       return { ...v, removed: true };
                     } else {
                       return v;
                     }
                   });
-                  setPlaylistVideos(vids);
                   break;
                 case VideoUpdateType.DELETE:
                   setModalState(ModalState.none);
-                  vids = playlistVideos.map((v) => {
+                  vids = videos.map((v) => {
                     if (v.id === videoUpdate.id) {
                       return { ...v, removed: true };
                     } else {
                       return v;
                     }
                   });
-                  setPlaylistVideos(vids);
                   break;
                 case VideoUpdateType.UPDATE_PROPERTY:
-                  vids = playlistVideos.map((v) => {
+                  vids = videos.map((v) => {
                     if (v.id === videoUpdate.id) {
-                      if (selectedVideo) {
-                        setSelectedVideo({ ...v, title: videoUpdate.title });
+                      // Note, is this necessary?
+                      if (playingVideo) {
+                        setPlayingVideo({ ...v, title: videoUpdate.title });
                       }
                       return { ...v, title: videoUpdate.title };
                     } else {
                       return v;
                     }
                   });
-                  setPlaylistVideos(vids);
                   break;
               }
-
-              // If necessary update the local storage
-              const storage = getGridState();
-              if (storage && storage.videos.length > 0) {
-                storage.videos = vids;
-                saveGridState(storage);
-              }
+              setVideos(vids)
+              setLastVideoUpdate(Date.now());
             }}
           />
         )}
@@ -293,6 +286,7 @@ const App: React.FC = () => {
               setIsConfigMissing(false);
               setModalState(ModalState.none);
               fetchPlaylists().then((data: Playlist[]) => {
+                setVideos([])
                 setSelectedPlaylist(data[0])
               });
             }}
@@ -313,7 +307,7 @@ const App: React.FC = () => {
       </Modal>
 
       <div className="min-h-screen h-fit dark:bg-neutral-900 dark:text-neutral-100">
-        <div className={selectedVideo ? "dark" : ""}>
+        <div className={playingVideo ? "dark" : ""}>
           <Navbar
             toggleTheme={toggleDarkMode}
             isDarkMode={darkMode}
@@ -321,42 +315,33 @@ const App: React.FC = () => {
             openConfigMenu={() => setModalState(ModalState.config)}
           />
         </div>
-        {!isPlaying && (
+        {!playingVideo && (
           <LeftMenu
             onClickOpenEditPlaylistMenu={onClickEditPlaylist}
             onClickOpenNewPlaylistMenu={onClickNewPlaylist}
             playlists={playlists}
             selectedPlaylist={selectedPlaylist}
             setSelectedPlaylist={(p: Playlist) => {
+              setVideos([])
               setSelectedPlaylist(p);
-              //setLastUpdate(Date.now());
             }}
           />
         )}
-        <main className={"pt-14" + (selectedVideo ? "" : " pl-60")}>
-          {!isPlaying && selectedPlaylist && (
+        <main className={"pt-14" + (playingVideo ? "" : " pl-60")}>
+          {
+            selectedPlaylist && 
             <VideoGrid
-              videos={playlistVideos}
-              setVideos={setPlaylistVideos}
+              setVideos={setVideos}
+              playingVideo={playingVideo}
+              VideoPlayer={VideoPlayer}
+              lastVideoUpdate={lastVideoUpdate}
+              key={selectedPlaylist.id}
+              videos={videos}
               playlist={selectedPlaylist}
-              onClickEditVideo={onClickEditVideo}
-              onClickOpenVideo={(v: Video) => {
-                setIsPlaying(true);
-                setSelectedVideo(v);
-              }}
+              onClickEditVideo={(v: Video) => onClickEditVideo(v)}
+              onTogglePlayingVideo={(v: Video | null) => setPlayingVideo(v)}
             />
-          )}
-
-          {isPlaying && selectedVideo && (
-            <Video
-              onClose={() => {
-                setSelectedVideo(undefined);
-                setIsPlaying(false);
-              }}
-              video={selectedVideo}
-              onClickEditVideo={onClickEditVideo}
-            />
-          )}
+          }
         </main>
       </div>
     </GlobalContext.Provider>

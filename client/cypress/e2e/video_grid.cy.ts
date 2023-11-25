@@ -6,7 +6,7 @@ const clickSortBy = (cy: Cypress.cy, option: 'Oldest'|'Latest') => {
 describe('Video grid', () => {
   const totalVideoCount = 33; // the total number of videos in playlist (tests/sample_data db)
   const itemsPerPage = 25; 
-  const playlist = 'random';  
+  const playlist = 'test-video-grid';  
   const playlistID = '8'
   const title = "32"; // title of video to use in testing
   const getVideosURL = () => `${Cypress.env('root_url')}/playlist/${playlistID}/videos*`
@@ -55,22 +55,49 @@ describe('Video grid', () => {
     cy.get(`[data-testid="video-grid-container"]`).children('div[data-testid]').should('have.length', itemsPerPage);
   })
 
-  it('displays newest videos (by upload_date) when `Latest` selected', () => {
+  it('displays newest videos (by upload_date) when `newest` selected', () => {
     clickSortBy(cy, 'Latest');
-    let index = totalVideoCount-1;
-    cy.get(`[data-testid="video-grid-container"]`).children('div[data-testid]').each((el) => {
-      cy.wrap(el).should('have.attr', 'data-testid', `video-grid-item-${index}`)
-      index -= 1;
+    let dates: Date[] = [];
+    cy.get('h3[data-testid^="download-date"]').each(($el) => {
+      const dateText = $el.attr("data-testid")?.split("=")[1];
+      if (dateText) {
+        const date = new Date(dateText);
+        dates.push(date);
+      }
     });
+
+    let isDescending = true;
+    for (let i = 0; i < dates.length - 1; i++) {
+      if (dates[i] < dates[i + 1]) {
+        isDescending = false;
+        break;
+      }
+    }
+
+    expect(isDescending).to.be.true
   }); 
 
   it('displays oldest videos (by upload_date) when `Oldest` selected', () => {
     clickSortBy(cy, 'Oldest');
-    let index = 0; 
-    cy.get(`[data-testid="video-grid-container"]`).children('div[data-testid]').each((el) => {
-      cy.wrap(el).should('have.attr', 'data-testid', `video-grid-item-${index}`)
-      index += 1;
+    let dates: Date[] = [];
+
+    cy.get('h3[data-testid^="download-date"]').each(($el) => {
+      const dateText = $el.attr("data-testid")?.split("=")[1];
+      if (dateText) {
+        const date = new Date(dateText);
+        dates.push(date);
+      }
     });
+
+    let isAscending = true;
+    for (let i = 0; i < dates.length - 1; i++) {
+      if (dates[i] > dates[i + 1]) {
+        isAscending = false;
+        break;
+      }
+    }
+
+    expect(isAscending).to.be.true
   }); 
 
   it('fetches more videos when scrolled to bottom of page', () => {

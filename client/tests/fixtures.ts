@@ -10,6 +10,7 @@ export const playlistData: Playlist[] = [
 
 export const videoData: Video[] = [
   {
+    download_date: new Date().toDateString(),
     id: 1,
     file_id: "12345678",
     file_path: "video1.mp4",

@@ -2,7 +2,6 @@ import React from 'react';
 import {  FiEdit3 } from 'react-icons/fi';
 import { IoIosAdd } from 'react-icons/io';
 import { Playlist } from '../App';
-import { resetVideoGridData } from './VideoGrid';
 
 interface LeftMenuProps {
   playlists: Playlist[];
@@ -12,7 +11,7 @@ interface LeftMenuProps {
   onClickOpenNewPlaylistMenu:  () => void;
 }
 
-const LeftMenu: React.FC<LeftMenuProps> = ({playlists, selectedPlaylist, onClickOpenNewPlaylistMenu, onClickOpenEditPlaylistMenu, setSelectedPlaylist}) => {
+const LeftMenu: React.FC<LeftMenuProps> = ({playlists, selectedPlaylist, onClickOpenNewPlaylistMenu, onClickOpenEditPlaylistMenu, setSelectedPlaylist,}) => {
   return (
     <div className="pl-10 flex flex-col fixed w-60 h-full pt-14 gap-2 ">
       <div className="flex w-full justify-end">
@@ -29,18 +28,18 @@ const LeftMenu: React.FC<LeftMenuProps> = ({playlists, selectedPlaylist, onClick
         {playlists.map((playlist) => (
           <div key={playlist.id} className="flex justify-between group">
             <button
+              disabled={selectedPlaylist === playlist}
               data-testid={`playlist-${playlist.name}`}
-              className={`hover:cursor-pointer w-full flex items-center gap-1 dark:hover:text-neutral-100 ${
+              className={`hover:${selectedPlaylist === playlist ? 'cursor-not-allowed' :'cursor-pointer'} w-full flex items-center gap-1 dark:hover:text-neutral-100 ${
                 playlist.id === selectedPlaylist?.id
                   ? "text-neutral-950  dark:text-neutral-100"
                   : "text-neutral-500 dark:text-neutral-500"
               }`}
               onClick={() => {
-                resetVideoGridData();
                 setSelectedPlaylist(playlist);
               }}
             >
-              {playlist.name.substring(0, 17)}
+              {playlist.name}
             </button>
 
             {

@@ -10,7 +10,6 @@ import '@fontsource/roboto/700.css';
 import { StrictMode } from 'react';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  // Temporarily disable strict mode, as it causes
   <StrictMode>
     <App />
   </StrictMode>,

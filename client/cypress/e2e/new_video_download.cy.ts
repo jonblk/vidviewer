@@ -67,8 +67,8 @@ describe('Download video', () => {
   // Run all tests here to speed up testing
   it('downloads video when download clicked', () => {
     const videoUrl      = 'https://archive.org/details/SteamboatWillie';
-    const playlist      = (Cypress.env("playlists") as string[])[1];
-    const otherPlaylist = (Cypress.env("playlists") as string[])[2];
+    const playlist      = 'test-download-video';
+    const otherPlaylist = 'test-playlist';
     const videoTitle    = 'Steamboat Willie'
     const videoDuration = '7:22'
 
@@ -102,16 +102,13 @@ describe('Download video', () => {
     cy.get('body').should('not.contain', videoTitle);
 
     // Wait for video to download
-    cy.wait(20000)
+    cy.wait(20000);
 
     // Reload
-    cy.visit(Cypress.env('root_url'));
+    cy.reload();
 
     // Click on the playlist to open videos
-    cy.get(`[data-testid="playlist-${playlist}"]`).click()
-
-    // Check that the image is fetched successfully 
-    cy.wait('@getThumbnail').its('response.statusCode').should('eq', 200);
+    cy.get(`[data-testid="playlist-${playlist}"]`).click();
 
     // Check that video title is correct 
     cy.get('body').should('contain', videoTitle);

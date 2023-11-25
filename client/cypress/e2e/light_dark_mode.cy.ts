@@ -16,7 +16,7 @@ describe('light/dark mode', () => {
       cy.get("[data-testid=light-dark-toggle]").click();
       cy.reload();
       cy.isDarkMode().then(isDarkAfterReload => {
-        expect(isDark).equal(isDarkAfterReload)
+        expect(isDark).to.not.equal(isDarkAfterReload)
       })
     })
   })

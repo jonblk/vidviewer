@@ -178,7 +178,7 @@ func (repo *VideoRepository) GetFromPlaylist(playlistID string, limit uint, page
 		FROM videos AS v
 		JOIN playlist_videos AS pv ON v.id = pv.video_id
 		WHERE pv.playlist_id = ? AND download_complete = 1` + likeQuery + `	
-		ORDER BY id ` + sort + `
+		ORDER BY v.download_date ` + sort + `, v.id ` + sort + `
         LIMIT ? 
 		OFFSET ?
 	    `
@@ -187,7 +187,7 @@ func (repo *VideoRepository) GetFromPlaylist(playlistID string, limit uint, page
 		query = `
 		SELECT * FROM videos 
 		WHERE download_complete = 1` + likeQuery + ` 
-		ORDER BY id ` + sort + `
+		ORDER BY download_date ` + sort + `, id ` + sort + `
         LIMIT ? 
 		OFFSET ?
 		`

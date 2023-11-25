@@ -1,7 +1,7 @@
 describe('edit video', () => {
-  const playlist = 'test-delete'
-  const videoTitle = 'video'
-  const addToPlaylist = (Cypress.env("playlists") as string[])[1]
+  const playlist = 'test-edit-video'
+  const videoTitle = 'video1'
+  const addToPlaylist = 'test-playlist' 
 
   const openEditMenu = (playlist: string, title: string) => {
     cy.get(`[data-testid="playlist-${playlist}"]`).click();
@@ -29,9 +29,8 @@ describe('edit video', () => {
     cy.get(`[data-testid="video-thumbnail-${videoTitle}"]`).should('not.exist');
     cy.get(`[data-testid="video-thumbnail-${newTitle}"]`).should('exist');
 
-    // reset title
-    openEditMenu(playlist, newTitle);
-
+    cy.get(`[data-testid="video-thumbnail-${newTitle}"]`).trigger('mouseover');
+    cy.get(`[data-testid=video-item-more-icon]`).click();
 
     cy.get('input#title').clear();
     cy.get('input#title').type(videoTitle);
@@ -43,9 +42,6 @@ describe('edit video', () => {
   it('adds video to another playlist when updating playlist checkbox', () => {
     cy.get(`[data-testid="checkbox-toggle-${addToPlaylist}"]`).click()
     cy.closeModal()
-
-    // Open playlist
-    cy.get(`[data-testid="playlist-${addToPlaylist}"]`).click();
 
     // Check if video added to playlist
     cy.get(`[data-testid="video-grid-item-${videoTitle}"]`).should('exist');
@@ -67,7 +63,7 @@ describe('edit video', () => {
     cy.get(`[data-testid="video-grid-item-${videoTitle}"]`).should('not.exist');
 
     // Reset
-    openEditMenu((Cypress.env('playlists') as string[])[0], videoTitle);
+    openEditMenu('All', videoTitle);
     cy.get(`[data-testid="checkbox-toggle-${playlist}"]`).click();
     cy.closeModal();
     cy.get(`[data-testid="video-grid-item-${videoTitle}"]`).should('exist');
@@ -96,7 +92,7 @@ describe('edit video', () => {
     cy.get(`[data-testid="video-grid-item-${videoTitle}"]`).should('not.exist');
 
     // Make sure it doesn't exist in 'All' videos
-    cy.get(`[data-testid="playlist-${(Cypress.env('playlists') as string[])[0]}"]`).click();
+    cy.get(`[data-testid="playlist-${'All'}"]`).click();
     cy.get(`[data-testid="video-grid-item-${videoTitle}"]`).should('not.exist');
 
     // Reset! (add video back to db)

@@ -9,12 +9,13 @@ describe('Load video from disk', () => {
 
   it('adds videos from disk', () => {
     const fixturesFolder = Cypress.config('fixturesFolder');
-    const folderPath = `${fixturesFolder}/videos`;
+    const folderPath = `${fixturesFolder}/new_videos`;
 
-    cy.addVideoFromDisk('test-load-disk', folderPath)
+    cy.addVideoFromDisk('test-load-disk', folderPath);
 
-    cy.wait(20000)
+    cy.wait(20000);
 
+    cy.reload();
     cy.get(`[data-testid="playlist-${playlist}"]`).click();
 
     cy.task('getFiles', folderPath).then((filenames) => {
@@ -40,7 +41,7 @@ describe('Load video from disk', () => {
 
   it('does not add videos that already exist', () => {
     const fixturesFolder = Cypress.config('fixturesFolder');
-    const folderPath = `${fixturesFolder}/videos`;
+    const folderPath = `${fixturesFolder}/new_videos`;
 
     cy.closeModal();
     cy.get(`[data-testid="playlist-${playlist}"]`).click();
