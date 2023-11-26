@@ -124,7 +124,7 @@ func TestGetBy(t *testing.T) {
 		t.Errorf("Expected nil error, got %s", err)
 	}
 
-	if video.ID != ids[1] {
+	if video == nil || video.ID != ids[1] {
 		t.Errorf("Expected getBy to return video with a specified ID")
 	}
 }

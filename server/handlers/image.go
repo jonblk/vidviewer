@@ -28,7 +28,11 @@ func GetImage(w http.ResponseWriter, r *http.Request) {
 	video, err := repo.GetBy(fileID, "file_id")
 
 	if err != nil {
-		http.Error(w, "Video not found", http.StatusNotFound)
+		http.Error(w, "Error getting image", http.StatusInternalServerError)
+	}
+
+	if video == nil  {
+		http.Error(w, "Image not found", http.StatusNotFound)
 		return
 	}
 

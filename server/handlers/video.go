@@ -333,6 +333,23 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
   case "ytdlp":
+	// check if video exists already
+	existingVideo, err := videoRepository.GetBy(data.URL, "url")
+
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(ErrorResponse{Errors: []string{err.Error()}})
+		return
+	}
+
+	if existingVideo != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Errors: []string{"Video exists"}})
+		return
+	}
+
     ytdlpError := loadVideoWithYtdlp(
 			data.URL, 
 			fmt.Sprint(data.PlaylistID),
@@ -443,7 +460,7 @@ func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo 
 		existingVideo, _ := videoRepo.GetBy(checksum, "md5_checksum")
 
 		// If file already exists in DB skip it
-		if (existingVideo.ID > 0) {
+		if (existingVideo != nil) {
 			log.Println("Video already exists, skipping video:", path)
 			continue
 		}

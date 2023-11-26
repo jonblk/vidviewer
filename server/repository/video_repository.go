@@ -25,18 +25,21 @@ func (repo *VideoRepository) SetDB(sql *sql.DB) {
 const ALL_PLAYLIST_ID string = "0"
 
 // Get the video
-func (repo *VideoRepository) GetBy(value string, by string) (models.Video, error) {
+func (repo *VideoRepository) GetBy(value string, by string) (*models.Video, error) {
 	video := models.Video{}
     query := fmt.Sprintf("SELECT * FROM videos WHERE %s = ?", by)
 
 	err := repo.GetDB().QueryRow(query, value).Scan(&video.ID, &video.Url, &video.FileID, &video.FileFormat, &video.YtID, &video.Title, &video.Duration, &video.DownloadComplete, &video.DownloadDate, &video.Md5Checksum)
 
 	if err != nil {
-		log.Println(err.Error())
-		return video, err
+		if err == sql.ErrNoRows {
+			return nil, nil
+		} else {
+			return nil, err
+		}
 	}
 
-	return video, nil
+	return &video, nil
 }
 
 // Get the video

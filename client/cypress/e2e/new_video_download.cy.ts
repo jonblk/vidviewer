@@ -25,23 +25,30 @@ describe('Download video', () => {
   // TODO fix
   it.skip('displays `invalid url` when invalid url is typed', ()=> {
     const invalidUrl = 'https://82u32108u12038u.org'
-    cy.get('input[id="url"]').type(invalidUrl).trigger('change');
-    cy.wait(9000)
+    cy.get('input[id="url"]').type(invalidUrl)
+    cy.wait(10000)
     cy.contains('li', 'Invalid url').should('exist');
   })
 
-  it.skip('raises error when trying to download video that was previously downloaded')
+  it('displays error when downloading video that was previously downloaded', () => {
+    const urlExists = 'https://archive.org/details/CEP_00_032'
+    cy.get('input[id="url"]').type(urlExists)
+    cy.wait(10000)
+    cy.get('[data-testid="download-video-button"]').click();
+    cy.contains('li', 'Video exists').should('exist');
+  })
 
   it('fetches resolution options when valid video URL is typed', () => {
     cy.get('input[id="url"]').type('https://archive.org/details/night_of_the_living_dead')
-    cy.get('[data-testid="dropdown-button-video_format"]').click()
     cy.wait(10000);
+    cy.get('[data-testid="dropdown-button-video_format"]').click()
     cy.contains('button', '640x480').should('exist')
     cy.contains('button', '320x240').should('exist')
   }); 
 
   it('sets resolution when option is clicked', () => {
     cy.get('input[id="url"]').type('https://archive.org/details/night_of_the_living_dead')
+    cy.wait(10000);
     cy.get('[data-testid="dropdown-button-video_format"]').click()
     cy.get('[data-testid="option-video_format-320x240"]').click()
     cy.contains('span', '320x240').should('exist')
@@ -105,7 +112,7 @@ describe('Download video', () => {
     cy.wait(20000);
 
     // Reload
-    cy.reload();
+    cy.visit(Cypress.env('root_url'));
 
     // Click on the playlist to open videos
     cy.get(`[data-testid="playlist-${playlist}"]`).click();
