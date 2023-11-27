@@ -1,47 +1,31 @@
-# vidviewer 
+<h1 align="center"> Vidviewer </h1> 
  
-Vidviewer is a simple way to organize, download and watch videos on your computer.  
-Run from a Go binary + web browser. 
+<p align="center"> Organize, download and watch videos on your computer.</p>
+
+<p align="center"> Vidviewer is a locally run video streaming server (and web client) that integrates with yt-dlp. //in development// </p>
 
 ![screenshot](https://github.com/jonblk/vidviewer/assets/132053602/be7ed870-3b2d-4431-9bb4-aea0ac344a19)
 
 ## Features
 
-- Download videos with ytp  
-- Dark/light mode
 - Import videos from disk (webm, mp4)
 - Search videos
 - Create playlists
+- Dark/light mode
+- Download videos with yt-dlp  
+- Choose resolution when downloading
 
-## Requirements
+## Dependencies
 
-The following should be preinstalled:
-- [mkcert](https://github.com/FiloSottile/mkcert)  (for local SSL connections)
-- ffmpeg 
-- yt-dlp 
+- [mkcert](https://github.com/FiloSottile/mkcert)
+- [ffmpeg](https://github.com/FFmpeg/FFmpeg) 
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) 
 
-## Stack: 
+## Develop
 
-- go     
-- reactjs  
-- sqlite 
+Run dev servers: 
+- `go run runner/main.go --mode=dev`
 
-## Development
-
-Run the server in dev mode: `Go run . -dev`.  This allows cors on port :5173.  Run the react dev server: `npm run dev 5173`.
-
-HTML files and assets are served from port 8000 when running the production server.  
-
-To compile: 
-
-- Build the frontend: `npm run build`
-- Before building the production binary create a `server/build` directory with the frontend build. 
-- Compile production build: `GOOS=linux GOARCH=amd64 go build main.go`
-
-## Current Implementation
-
-The user selects a `rootFolder` which gets populated with an sqlite database, a `files` folder (for videos and thumbnails) and a `temp` folder for in-progress downloads.
-
-Videos are given a random file_id and are saved in the following structure: `rootFolder/files/ab/cd/ef/abcdefghijkl.mp4`. Thumbnail images are also saved in this manner in the same directory `rootFolder/files/ab/cd/ef/abcdefghijkl.jpg`.  
-
- 
+Run tests:
+- `go run runner/main.go --mode=test --cypress_mode=open` (opens cypress)
+- `go run runner/main.go --mode=test` (runs cypress in headless mode)
