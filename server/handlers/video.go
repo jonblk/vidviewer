@@ -542,7 +542,7 @@ func loadVideoWithYtdlp(url string, playlistID string, format string, playlistVi
 	duration, title, nil := ytdlp.ExtractVideoInfo(url)
 	
 	// Get yt vid id.  returns "" if not a youtube video
-	ytID := extractVideoID(url)
+	//ytID := extractVideoID(url)
 
 	currentDate := time.Now().Format("2006-01-02")
 
@@ -558,7 +558,6 @@ func loadVideoWithYtdlp(url string, playlistID string, format string, playlistVi
 		FileID: fileID, 
 		Url: url,
 		Title: title,
-		YtID: ytID,
 		Duration: duration,
 		DownloadComplete: false,
 		FileFormat: "mp4",

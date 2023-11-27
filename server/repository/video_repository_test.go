@@ -78,7 +78,6 @@ func newVideo(title ...string) models.Video{
 		DownloadDate:      time.Now().Format(timeFormat),
 		Url:               "test_url",
 		Title:             _title, 
-		YtID:              "test_ytid",
 		FileID:            RandomString(10),
 		Duration:          "test_duration",
 		DownloadComplete:  true,

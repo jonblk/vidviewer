@@ -3,7 +3,6 @@ CREATE TABLE videos (
     url TEXT,
     file_id TEXT UNIQUE,
     file_format TEXT,
-    yt_id TEXT,
     title TEXT,
     duration TEXT,
     download_complete BOOLEAN,
