@@ -7,9 +7,24 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
+
+func DeleteFilesWithPrefix(root, prefix string) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() && strings.HasPrefix(info.Name(), prefix) {
+			return os.Remove(path)
+		}
+
+		return nil
+	})
+}
 
 func GetTemporaryFolderPath(rootPath string) string {
 	return filepath.Join(rootPath, "temp")
@@ -81,6 +96,13 @@ func CreateTempFolder(rootPath string) error {
 		}
 	}
 	return err
+}
+
+func OnCancelDownload(rootPath string, fileID string) {
+    err := DeleteFilesWithPrefix(GetTemporaryFolderPath(rootPath), fileID)
+	if err != nil {
+		log.Println("Error while trying to delete temperary files for video file ID: ", fileID, "\n\n error msg: ", err)
+	}
 }
 
 func GetFilePath(rootFolderPath string, fileID string, fileFormat string) string {
@@ -156,7 +178,7 @@ func CopyFile(from string, to string) error {
 
 // Deletes the video file and thumbnail
 // Then deletes the containing folders if they are empty after deletions
-func DeleteFiles(rootPath, fileID, fileEXT, imgEXT string) error {
+func OnDeleteVideo(rootPath, fileID, fileEXT, imgEXT string) error {
 	var fileFolderPath string = getFilesFolderPath(rootPath)
 	videoPath := filepath.Join(fileFolderPath, fileID[:2], fileID[2:4], fileID[4:6], fileID+"."+fileEXT)
 

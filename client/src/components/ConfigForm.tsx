@@ -56,8 +56,10 @@ const ConfigForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
 
   return (
     <form className="">
-      <div className="mb-4">
+      <div className="mb-4 ">
         <Label htmlFor="title">Root Folder</Label>
+        <p className=" text-red-500"> {error}</p>
+        <div className="flex flex-col gap-1">
         <Input
           type="input"
           value={rootFolderPath}
@@ -65,13 +67,13 @@ const ConfigForm: React.FC<FormComponentProps> = ({ onSuccess }) => {
           id="root_folder_path"
           onChange={(event) => setRootFolderPath(event.target.value)}
         />
-        <p className=" text-red-500"> {error}</p>
-      </div>
-      <div className="flex flex-col gap-3">
-        <Button color="primary" type="submit" onClick={handleSubmit}>
-          Update
+        <Button color="neutral" type="submit" onClick={handleSubmit}>
+          Update Root
         </Button>
+</div>
       </div>
+      
+        
     </form>
   );
 };

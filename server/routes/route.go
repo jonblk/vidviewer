@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"text/template"
 	"time"
+	"vidviewer/downloadManager"
 	"vidviewer/handlers"
 	"vidviewer/middleware"
 	"vidviewer/repository"
@@ -17,7 +18,7 @@ import (
 
 var Router *mux.Router
 
-func Initialize(assets embed.FS, htmlFiles embed.FS, repositories *repository.Repositories ) (r *mux.Router) {
+func Initialize(assets embed.FS, htmlFiles embed.FS, repositories *repository.Repositories, dm *downloadManager.DownloadManager ) (r *mux.Router) {
 	// Serve HTML files
 	var serveHtml = func(w http.ResponseWriter, r *http.Request) {
 		requestedPath := r.URL.Path
@@ -88,6 +89,7 @@ func Initialize(assets embed.FS, htmlFiles embed.FS, repositories *repository.Re
 	Router.Use(middleware.FilesMiddleware)
 	Router.Use(middleware.DBMiddleware)
 	Router.Use(middleware.WithRepositories(repositories))
+	Router.Use(middleware.WithDownloadManagerMiddleware(dm))
 
 	// Serve html files from build folder
 	Router.HandleFunc("/", serveHtml).Methods("GET")
@@ -116,7 +118,10 @@ func Initialize(assets embed.FS, htmlFiles embed.FS, repositories *repository.Re
 	// PLAYLISTVIDEOS
 	Router.HandleFunc("/playlist_videos", handlers.DeletePlaylistVideo).Methods("DELETE")
 	Router.HandleFunc("/playlist_videos", handlers.CreatePlaylistVideo).Methods("POST")
-	
+
+	// DOWNLOADS
+	Router.HandleFunc("/downloads/{video_id}", handlers.CancelDownload).Methods("DELETE")
+	Router.HandleFunc("/downloads/{video_id}", handlers.ResumeDownload).Methods("PATCH")
 
 	// VIDEOS 
 	Router.HandleFunc("/videos", handlers.CreateVideo).Methods("POST")

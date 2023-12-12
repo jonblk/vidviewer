@@ -17,7 +17,7 @@ const EditPlaylistForm: React.FC<FormComponentProps> = ({ onSuccess, id, initial
 
   const handleSubmit = async (event: React.FormEvent) => {
     if (id === undefined || id === null) {
-        throw("Error: playlist id is undefined")
+      throw("Error: playlist id is undefined")
     }
     event.preventDefault();
     try {

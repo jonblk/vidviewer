@@ -1,11 +1,14 @@
 package ytdlp
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -87,8 +90,6 @@ func ExtractVideoInfo(url string) (string, string, error) {
 
 	info := strings.Split(strings.TrimSpace(stdout.String()), "\n")
 
-	log.Println(info)
-
 	title := ""
 	duration :=  ""
 
@@ -111,29 +112,58 @@ func ExtractVideoInfo(url string) (string, string, error) {
 	return duration, title, err
 }
 
-func DownloadVideo(url string, format string, filepath string, callback func(v bool)) {
-	 // Set the desired video quality in the format string
+func CreateDownloadCommand(url string, format string, filePath string) *exec.Cmd {
+   // Set the desired video quality in the format string
     if format == "" {
         format = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]"
     } else {
         format = format + "+bestaudio[ext=m4a]/best[ext=mp4]"
     } 
 
-    log.Println("Video format: " + format)
-
-    // Define command and arguments
-    cmd := exec.Command("yt-dlp", "-f", format, "-o", filepath, url)
-
-    // Run the command and capture combined standard output and standard error
-    output, err := cmd.CombinedOutput()
-    outputStr := string(output)
-
-    // Check if the output contains the string "ERROR"
-    if strings.Contains(outputStr, "ERROR") || err != nil {
-        callback(true)
-    } else {
-		// No error occurred
-		callback(false)
-	}
+    return exec.Command("yt-dlp", "-c", "--newline", "-f", format, "-o", filePath, url)
 }
 
+func RunDownload(cmd *exec.Cmd, onReadProgress func(progress uint, speed string), onComplete func(), onError func(err error)) {
+	// Create a pipe to capture the output
+	stdout, _ := cmd.StdoutPipe()
+
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		onError(err)
+		return
+	}
+
+	// Create a scanner to read the output line by line
+	scanner := bufio.NewScanner(stdout)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "frag") && strings.HasPrefix(line, "[download]") {
+			// "[download] 0.3% of 363.35KiB at 709.34KiB/s ETA 00:00"
+			parts := strings.Fields(line)
+			if len(parts) >= 8 {
+				speed := parts[6]
+        		p := strings.TrimSuffix(parts[1], "%")
+				pf, err := strconv.ParseFloat(p, 64)
+				if err != nil {
+					onReadProgress(0, parts[6])
+				} else {
+					pf = math.Min(100, pf)
+					percentage := uint(pf)
+					onReadProgress(percentage, speed)
+				}
+	 		} 
+		}
+	}
+
+	err := cmd.Wait()
+
+	if _, ok := err.(*exec.ExitError); ok {
+		// Cancelled download, or error during downloading
+	} else if err != nil {
+		// Some other error
+		onError(err)
+	} else {
+		onComplete()
+	}
+}

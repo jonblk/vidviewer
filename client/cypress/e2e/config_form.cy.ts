@@ -1,7 +1,6 @@
 const server_port         = Cypress.env("SERVER_PORT")
 const empty_library_path  = Cypress.env("EMPTY_LIBRARY_PATH");
 
-
 // On initial page load when root folder is not found in config settings
 // a message should prompt user to enter a `root folder`
 // (the location of the video files data). 

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -32,12 +33,14 @@ func (repo *PlaylistVideoRepository) Create(playlist_id string, video_id string)
 	result, err := repo.GetDB().Exec(query, playlist_id, video_id)
 
 	if err != nil {
+		log.Println("Error generating sql query")
 		return -1, err
 	}
 
 	id, err := result.LastInsertId()
 
 	if err != nil {
+		log.Println("Error inserting into playlistVideo table", id)
 		return -1, err
 	}
 

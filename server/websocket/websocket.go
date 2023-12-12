@@ -14,6 +14,7 @@ import (
 type MessageType string
 
 const (
+	DownloadStatus       MessageType = "download_status"
 	VideoDownloadSuccess MessageType = "video_download_success"
 	VideoDownloadFail    MessageType = "video_download_fail"
 	RootFolderNotFound   MessageType = "root_folder_not_found"
@@ -32,6 +33,7 @@ type Hub struct {
 
 type WebsocketMessage struct {
 	Type string `json:"type"`
+	Payload interface{} `json:"payload"`
 }
 
 var (
@@ -67,8 +69,6 @@ func (hub *Hub) RemoveClient(client *Client) {
 }
 
 func (hub *Hub) WriteToClients(message WebsocketMessage) {
-	log.Println("writing to clients: " + message.Type)
-	
 	if (hub == nil) {
 	    log.Println("write to websocket failed, hub is nil")
 		return

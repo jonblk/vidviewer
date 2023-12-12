@@ -45,7 +45,7 @@ const Modal: React.FC<ModalProps> = ({ onClose, isOpen, children, isLocked=false
     <>
       {isOpen && (
         <div data-testid="modal" className="fixed inset-0 flex items-center justify-center bg-black dark:bg-opacity-90 bg-opacity-70 z-50">
-          <div className="bg-white dark:bg-neutral-800 dark:text-neutral-300 rounded w-[250px] p-4 shadow-lg relative" ref={modalRef}>
+          <div className="bg-neutral-100 dark:bg-neutral-800 dark:text-neutral-300 rounded w-[250px] p-4 shadow-lg relative" ref={modalRef}>
             {!isLocked && <button
               data-testid="close-modal-button"
               className="absolute top-1 right-2 text-neutral-400 hover:text-neutral-700 z-50"

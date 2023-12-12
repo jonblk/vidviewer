@@ -63,7 +63,7 @@ const Dropdown: React.FC<DropdownProps> = ({ options, disabled, onSelect, isFetc
           data-testid={`dropdown-button-${id}`}
           disabled={disabled}
           type="button"
-          className="flex items-center justify-between w-full px-2 py-2 text-sm dark:text-neutral-200 bg-white dark:bg-neutral-900 dark:border-neutral-700 border border-neutral-200 rounded-md shadow-sm hover:bg-neutral-100 focus:outline-none "
+          className="flex items-center justify-between w-full px-2 py-2 text-sm dark:text-neutral-200 bg-white dark:bg-neutral-800 dark:border-neutral-700 border border-neutral-200 rounded-md shadow-sm hover:bg-neutral-100 focus:outline-none "
           onClick={handleToggleDropdown}
         >
           { !disabled && !isFetching  ?

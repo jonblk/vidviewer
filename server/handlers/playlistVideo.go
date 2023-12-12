@@ -17,7 +17,7 @@ type TogglePlaylistVideoForm struct {
 
 func DeletePlaylistVideo(w http.ResponseWriter, r *http.Request) {
   // Context
-  repositories := getRepositories(r)
+  repositories := GetRepositories(r)
   repo := repositories.PlaylistVideoRepo
 
   body, err := io.ReadAll(r.Body)
@@ -47,7 +47,7 @@ func DeletePlaylistVideo(w http.ResponseWriter, r *http.Request) {
 
 func CreatePlaylistVideo(w http.ResponseWriter, r *http.Request) {
   // Context
-  repositories := getRepositories(r)
+  repositories := GetRepositories(r)
   repo := repositories.PlaylistVideoRepo
   body, err := ioutil.ReadAll(r.Body)
 

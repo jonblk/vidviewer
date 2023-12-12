@@ -16,11 +16,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 	"vidviewer/config"
+	"vidviewer/downloadManager"
 	"vidviewer/files"
 	"vidviewer/middleware"
 	"vidviewer/models"
@@ -186,7 +186,7 @@ func DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete the file and containing folders if they are empty
-	files.DeleteFiles(rootFolderPath, fileID, fileEXT, "jpg")
+	files.OnDeleteVideo(rootFolderPath, fileID, fileEXT, "jpg")
 
 	// Return a 204 No Content response to indicate successful deletion
 	w.WriteHeader(http.StatusNoContent)
@@ -262,7 +262,7 @@ func getVideoRepository(r *http.Request) repository.VideoRepository{
 	return r.Context().Value(middleware.RepositoryKey).(*repository.Repositories).VideoRepo
 }
 
-func getRepositories(r *http.Request) *repository.Repositories{
+func GetRepositories(r *http.Request) *repository.Repositories{
 	return r.Context().Value(middleware.RepositoryKey).(*repository.Repositories)
 }
 
@@ -283,28 +283,29 @@ type ErrorResponse struct {
 }
 
 func CreateVideo(w http.ResponseWriter, r *http.Request) {
-	repositories := getRepositories(r)
+	repositories := GetRepositories(r)
 	rootFolderPath := r.Context().Value(middleware.ConfigKey).(config.Config).FolderPath
+	dm := r.Context().Value(middleware.DownloadManagerKey).(*downloadManager.DownloadManager)
 	videoRepository := repositories.VideoRepo
 	playlistRepository := repositories.PlaylistRepo 
 	playlistVideoRepository :=  repositories.PlaylistVideoRepo
-	tempFolderpath := files.GetTemporaryFolderPath(rootFolderPath)
+	tempFolderPath := files.GetTemporaryFolderPath(rootFolderPath)
 
-  body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 
-  if err != nil {
-	log.Println("Error reading request body")
-    http.Error(w, "Error reading request body", http.StatusInternalServerError)
-    return
-  }
+	if err != nil {
+		log.Println("Error reading request body")
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
 
-  var data NewVideoFormData
-  err = json.Unmarshal(body, &data)
-  if err != nil {
-		log.Println("Error parsing JSON data")
-    http.Error(w, "Error parsing JSON data", http.StatusBadRequest)
-    return
-  }
+	var data NewVideoFormData
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+			log.Println("Error parsing JSON data")
+		http.Error(w, "Error parsing JSON data", http.StatusBadRequest)
+		return
+	}
 
 	errors := validateNewVideoForm(data, playlistRepository)
 
@@ -333,8 +334,7 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
   case "ytdlp":
-	// check if video exists already
-	existingVideo, err := videoRepository.GetBy(data.URL, "url")
+	video, err := videoRepository.GetBy(data.URL, "url")
 
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -343,29 +343,67 @@ func CreateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if existingVideo != nil {
+	if video != nil && video.DownloadComplete {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(ErrorResponse{Errors: []string{"Video exists"}})
 		return
 	}
 
-    ytdlpError := loadVideoWithYtdlp(
-			data.URL, 
-			fmt.Sprint(data.PlaylistID),
-			data.Format,
-			playlistVideoRepository,
-			videoRepository,
-			rootFolderPath,
-			tempFolderpath,
-	  )
+	if video == nil {
+		duration, title, nil := ytdlp.ExtractVideoInfo(data.URL)
+		currentDate := time.Now().Format("2006-01-02 15:04:05")
+		fileID, _ := generateFileID()
 
-		if ytdlpError != nil{
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(ErrorResponse{Errors: []string{ytdlpError.Error()}})
-			return
+		video = &models.Video {
+			VideoFormat: sql.NullString{String: data.Format, Valid: true},
+			DownloadDate: currentDate, 
+			FileID: fileID, 
+			Url: data.URL,
+			Title: title,
+			Duration: duration,
+			DownloadComplete: false,
+			FileFormat: "mp4",
 		}
+
+		videoID, err := videoRepository.Create(*video)
+		video.ID = videoID;
+
+		if err != nil {
+			log.Println("Error inserting video into videos table", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(ErrorResponse{Errors: []string{err.Error()}})
+			return 
+		}
+
+		// Create PlaylistVideo 
+		_, err = playlistVideoRepository.Create(fmt.Sprint(data.PlaylistID), fmt.Sprint(video.ID))
+
+		if err != nil {
+			log.Println("Error creating playlistvideo", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(ErrorResponse{Errors: []string{err.Error()}})
+			return 
+		}
+	}
+
+  	ytdlpError := LoadVideoWithYtdlp(
+		*video, 
+		playlistVideoRepository,
+		videoRepository,
+		rootFolderPath,
+		tempFolderPath,
+    	dm,
+	)
+
+	if ytdlpError != nil{
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(ErrorResponse{Errors: []string{ytdlpError.Error()}})
+		return
+	}
   }
 }
 
@@ -475,13 +513,13 @@ func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo 
 		// Insert Video into DB
 		video := models.Video{}
 		video.DownloadComplete = true 
-		video.DownloadDate = time.Now().Format("2006-01-02")
+		video.DownloadDate = time.Now().Format("2006-01-02 15:04:05")
 		video.Title = strings.TrimSuffix(filepath.Base(path), ext)
 		video.FileFormat = strings.TrimPrefix(ext, ".")
 		video.Md5Checksum = checksum
 		video.FileID = fileID
 
-    	duration, err := getVideoDuration(path)
+        duration, err := getVideoDuration(path)
 
 		if err == nil {
 			video.Duration = duration
@@ -535,100 +573,61 @@ func loadVideosFromDisk(folderPath string, playlistID string, playlistVideoRepo 
 }
 
 // Downloads video from yt-dlp
-func loadVideoWithYtdlp(url string, playlistID string, format string, playlistVideoRepository repository.PlaylistVideoRepository, videoRepository repository.VideoRepository, rootFolderPath string, tempFolderPath string) error {
-	var err error
+func LoadVideoWithYtdlp(video models.Video, playlistVideoRepository repository.PlaylistVideoRepository, videoRepository repository.VideoRepository, rootFolderPath string, tempFolderPath string, dm *downloadManager.DownloadManager) error {
+	downloadImgPath   := filepath.Join(tempFolderPath, video.FileID)
+	downloadVideoPathWithExt := filepath.Join(tempFolderPath, video.FileID+".mp4") 
+	downloadImgPathWithExt   := filepath.Join(tempFolderPath, video.FileID+".jpg")
 
-	// Get Video info
-	duration, title, nil := ytdlp.ExtractVideoInfo(url)
-	
-	// Get yt vid id.  returns "" if not a youtube video
-	//ytID := extractVideoID(url)
+  	download, _ := dm.AddNewDownload(video)
 
-	currentDate := time.Now().Format("2006-01-02")
-
-	fileID, _ := generateFileID()
-
-	//downloadVideoPath := filepath.Join(tempFolderpath, fileID) 
-	downloadImgPath   := filepath.Join(tempFolderPath, fileID)
-	downloadVideoPathWithExt := filepath.Join(tempFolderPath, fileID+".mp4") 
-	downloadImgPathWithExt   := filepath.Join(tempFolderPath, fileID+".jpg")
-
-	video := models.Video {
-		DownloadDate: currentDate, 
-		FileID: fileID, 
-		Url: url,
-		Title: title,
-		Duration: duration,
-		DownloadComplete: false,
-		FileFormat: "mp4",
+	onDownloadError := func(err error) {
+		download.IsError = true
+		download.IsComplete = false
+		playlistVideoRepository.OnDeleteVideo(strconv.FormatInt(video.ID, 10))
+		videoRepository.Delete(strconv.FormatInt(video.ID, 10))
+		files.DeleteFilesWithPrefix(rootFolderPath, video.FileID)
 	}
 
-	videoID, err := videoRepository.Create(video)
-
-	video.ID = videoID;
-
-	if err != nil {
-		log.Println("Error inserting video into videos table", err)
-		//http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	
-	id, err := playlistVideoRepository.Create(playlistID, fmt.Sprint(videoID))
-
-	if err != nil {
-		log.Println("Error inserting into playlistVideo table", id)
-		return err
-	}
-
-	onDownloadExit := func(isError bool) {
-		if (isError) {
-			log.Println("Error during download! Notifying client.")
-			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadFail)})
-			return
-		}
-
-		// Update video in db
-		video = updateVideoOnDownloadSuccess(videoRepository, video, downloadVideoPathWithExt)
-
-		// Save thumbnail
-		thumbnail_extract_err := ytdlp.DownloadVideoThumbnail(url, downloadImgPath)
-
-        // Add duration if its nil
-		if (duration == "") {
-			duration, err = getVideoDuration(downloadVideoPathWithExt)
+	onDownloadComplete := func() {
+		if (video.Duration == "") {
+			d, err := getVideoDuration(downloadVideoPathWithExt)
 			if (err == nil) {
-				video.Duration = duration
+				video.Duration = d 
 				videoRepository.Update(video)
 			} else {
 				log.Println("Error extracting duration:", err)
+				onDownloadError(err)
 			}
 		}
 
-		// If save unsuccessful, use FFMPEG
+		thumbnail_extract_err := ytdlp.DownloadVideoThumbnail(video.Url, downloadImgPath)
+
+		// If img fetch unsuccessful, use FFMPEG
 		if thumbnail_extract_err != nil {
 			extractThumbnail(downloadVideoPathWithExt, downloadImgPathWithExt)
 		}
 
 		// Create folders where the file is located 
-		folderPath, err := files.CreateFileFolders(rootFolderPath, fileID)
+		folderPath, err := files.CreateFileFolders(rootFolderPath, video.FileID)
 
 		if err != nil {
-			log.Println(err.Error())
-			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadFail)})
+			log.Println("Error creating folders for video: ", err)
+			onDownloadError(err)
 			return
 		} 
 
-        // Split video filename into base name and extension
-	  	imgBaseName := filepath.Base(downloadImgPathWithExt)
-	  	videoBaseName := filepath.Base(downloadVideoPathWithExt)
+		// Split video filename into base name and extension
+		imgBaseName   := filepath.Base(downloadImgPathWithExt)
+		videoBaseName := filepath.Base(downloadVideoPathWithExt)
 
 		// Move video file from temp folder to the new folder
 		newVideoFilePath := filepath.Join(folderPath, videoBaseName)
 		err = files.MoveFile(downloadVideoPathWithExt, newVideoFilePath)
-        if err != nil {
-			log.Println("Error moving video file from temp folder", err)
-			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadFail)})
-			return
+
+		if err != nil {
+			log.Println("Error moving video file from temp folder")
+			onDownloadError(err)
+			return 
 		}
 			
 		// Move image file from temp folder to the new folder
@@ -636,21 +635,37 @@ func loadVideoWithYtdlp(url string, playlistID string, format string, playlistVi
 		err = files.MoveFile(downloadImgPathWithExt, newImageFilePath)
 		if err != nil {
 			log.Println("Error moving image file from temp folder", err)
-			ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadFail)})
+			onDownloadError(err)
 			return
 		}
 
-		// Write success message to websocket so client can refresh UI
-		ws.CurrentHub.WriteToClients(ws.WebsocketMessage{Type: string(ws.VideoDownloadSuccess)})
+		// Update video 
+		err = updateVideoOnDownloadSuccess(videoRepository, video, newVideoFilePath)
+		if err != nil {
+			log.Println("Error while updating video:", err)
+			onDownloadError(err)
+			return
+		}
+
+		download.OnComplete()
 	}
 
-	// Download the video 
-	go ytdlp.DownloadVideo(
-		url, 
-		format,
-		downloadVideoPathWithExt, 
-		onDownloadExit,
-	) 
+	onReadOutput := func(progress uint, speed string) {  
+		download.Progress = progress
+		download.Speed = speed
+	}
+
+	cmd := ytdlp.CreateDownloadCommand(
+		video.Url, 
+		video.VideoFormat.String, 
+		downloadVideoPathWithExt,
+	)
+
+	// Run download process
+	go ytdlp.RunDownload(cmd, onReadOutput, onDownloadComplete, onDownloadError)
+
+	// Listen for events to cancel download process. 
+	go download.OnStartDownload(cmd)
 
 	return nil
 }	
@@ -669,28 +684,32 @@ func extractThumbnail(videoPath, outputPath string) error {
 	return nil
 }
 
-func updateVideoOnDownloadSuccess(repo repository.VideoRepository, video models.Video, filepath string) models.Video {
-	currentTime := time.Now()
-	formattedTime := currentTime.Format("2006-01-02 15:04:05")
+func updateVideoOnDownloadSuccess(repo repository.VideoRepository, video models.Video, filepath string) error {
 	md5Checksum, checksumErr := computeChecksum(filepath)
 
 	if (checksumErr != nil) {
 		log.Println("Error generating video file checksum") 
+		return checksumErr
 	}
 
+	video.Md5Checksum = md5Checksum
+	currentTime := time.Now()
+	formattedTime := currentTime.Format("2006-01-02 15:04:05")
 	video.DownloadComplete = true
 	video.DownloadDate = formattedTime
-	video.Md5Checksum = md5Checksum
 
-    // Prepare the SQL statement for inserting a row
-	repo.Update(video)
-	return video
+	err := repo.Update(video)
+	if err != nil {
+		log.Println("Error updating video: ", err)
+		return err
+	}
+	return nil
 }
 
 type ProbeData struct {
-    Streams []struct {
-        Duration string `json:"duration"`
-    } `json:"streams"`
+  Streams []struct {
+    Duration string `json:"duration"`
+  } `json:"streams"`
 }
 
 func getVideoDuration(path string) (duration string, err error) {
@@ -747,22 +766,4 @@ func generateFileID() (string, error) {
 	    return fileID, nil
 }
 
-func extractVideoID(url string) string  {
-	// Define the regular expression pattern to match the YouTube video ID
-	pattern := `(?i)(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})`
 
-	// Compile the regular expression pattern
-	regex, err := regexp.Compile(pattern)
-	if err != nil {
-		return "" 
-	}
-
-	// Find the first match of the video ID in the URL
-	match := regex.FindStringSubmatch(url)
-	if len(match) < 2 {
-		return ""
-	}
-
-	// Return the extracted video ID
-	return match[1]
-}

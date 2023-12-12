@@ -8,6 +8,7 @@ import (
 	"time"
 	"vidviewer/config"
 	"vidviewer/db"
+	"vidviewer/downloadManager"
 	"vidviewer/repository"
 	"vidviewer/routes"
 
@@ -33,6 +34,8 @@ var serverPort string
 var clientPort string
 
 func main() {
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
+
     var mode string
 	flag.StringVar(&mode, "mode", "production", "Mode of application runtime")
 	flag.Parse()
@@ -56,16 +59,14 @@ func main() {
 	db.InitializeDB()
 
 	repositories := repository.NewRepositories()
-
-	// Initialize routes
-	r := routes.Initialize(assets, htmlFiles, repositories)
+	dm := downloadManager.NewDownloadManager()
+	r := routes.Initialize(assets, htmlFiles, repositories, dm)
 
 	var srv *http.Server
 
-
 	if mode == "dev" {
 		credentials := handlers.AllowCredentials()
-		methods := handlers.AllowedMethods([]string{"GET", "POST", "DELETE", "PUT"})
+		methods := handlers.AllowedMethods([]string{"GET", "POST", "PATCH", "DELETE", "PUT"})
 		headers := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 		origins := handlers.AllowedOrigins([]string{"http://localhost:" + clientPort})
 		corsHandler := handlers.CORS(credentials, methods, headers, origins)(r)
@@ -86,10 +87,6 @@ func main() {
 			WriteTimeout: 4 * time.Second,
 		}
 	}	
-
-    if mode == "test" {
-		log.Println("Running server in Test Mode")
-	}
 
 	log.Fatal(
 		srv.ListenAndServeTLS(

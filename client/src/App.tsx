@@ -9,11 +9,14 @@ import NewPlaylistForm from './components/NewPlaylistForm';
 import EditVideoForm from './components/EditVideoForm';
 import { useDarkMode } from './hooks/useDarkMode';
 import { useWebSocket } from 'react-use-websocket/dist/lib/use-websocket';
-import { useEvent } from './hooks/useEvent';
 import ConfigForm from './components/ConfigForm';
 import AddVideoModal from './components/NewVideoForm';
 import GlobalContext from './contexts/GlobalContext';
 import VideoPlayer from './components/VideoPlayer';
+import DownloadStatus, { iDownloadStatus } from './components/DownloadStatus';
+import { HiOutlineMoon, HiOutlineSun } from 'react-icons/hi';
+import Button from './components/Button';
+import Label from './components/Label';
 
 let rootURL: string
 const env_server_port: string | undefined = process.env.SERVER_PORT
@@ -72,15 +75,24 @@ enum ModalState {
 }
 
 // Received websocket message types:
-const VIDEO_DOWNLOAD_SUCCESS = "video_download_success"
-const VIDEO_DOWNLOAD_FAIL    = "video_download_fail"
 const ROOT_FOLDER_NOT_FOUND  = "root_folder_not_found"
 const FFMPEG_NOT_FOUND       = "ffmpeg_not_found"
 const YTDLP_NOT_FOUND        = "ytdlp_not_found"
+const DOWNLOAD_STATUS        = "download_status"
 
 type WebSocketMessage = {
-  type: string 
-  payload: string | boolean | Video[] | Playlist[]
+  type: string
+  payload: string | boolean | Video[] | Playlist[] | iDownloadStatus[]
+}
+
+function isDownloadStatus(element: any): element is iDownloadStatus {
+ return 'is_complete' in element && 
+      'is_error' in element && 
+      'is_paused' in element && 
+      'title' in element && 
+      'url' in element && 
+      'progress' in element && 
+      'speed' in element; 
 }
 
 const App: React.FC = () => {
@@ -107,6 +119,9 @@ const App: React.FC = () => {
   const [lastVideoUpdate, setLastVideoUpdate] = useState(Date.now())
 
   const [videos, setVideos] = useState<Video[]>([]);
+
+  const [downloadStatuses, setDownloadStatuses] = useState<iDownloadStatus[]>([])
+  const [isDownloadStatusMenuOpen, setIsDownloadStatusMenuOpen] = useState(false)
 
   const fetchPlaylists = async () => {
     try {
@@ -155,10 +170,6 @@ const App: React.FC = () => {
     fetchPlaylists().catch((e) => console.log(e));
   }, [readyState]);
 
-  const onVideoDownloadSuccess = useEvent(() => {
-    // TODO - Update the UI
-  });
-
   // Setup websocket connection
   useEffect(() => {
     // Handle lastMessage
@@ -168,23 +179,33 @@ const App: React.FC = () => {
           lastMessage.data
         ) as WebSocketMessage;
 
-        if (message.type === VIDEO_DOWNLOAD_FAIL) {
-          console.error("Video download failed");
-        } else if (message.type === VIDEO_DOWNLOAD_SUCCESS) {
-          console.log("Video download complete");
-          //console.log(message.payload);
-          onVideoDownloadSuccess();
-        } else if (message.type === ROOT_FOLDER_NOT_FOUND) {
-          setIsConfigMissing(true);
-          setModalState(ModalState.config);
-        } else if (message.type === FFMPEG_NOT_FOUND) {
-          setModalState(ModalState.ffmpegNotFound)
-        } else if (message.type === YTDLP_NOT_FOUND) {
-          setModalState(ModalState.ytdlpNotFound)
+        switch(message.type) {
+          case ROOT_FOLDER_NOT_FOUND:
+            setIsConfigMissing(true);
+            setModalState(ModalState.config);
+            break;
+          case FFMPEG_NOT_FOUND:
+            setModalState(ModalState.ffmpegNotFound);
+            break;
+          case YTDLP_NOT_FOUND:
+            setModalState(ModalState.ytdlpNotFound);
+            break;
+          case DOWNLOAD_STATUS:
+            if (Array.isArray(message.payload)) {
+              const allElementsAreDownloadStatus = (message.payload as any[]).every(isDownloadStatus);
+              if (allElementsAreDownloadStatus) {
+                const downloads = message.payload as iDownloadStatus[];
+                setDownloadStatuses(downloads)
+              } else {
+                console.warn("Non-downloadStatus found in payload array")
+              }
+            } else {
+              console.warn("Download status payload should be array, but isn't")
+            }
         }
       }
     }
-  }, [readyState, lastMessage, onVideoDownloadSuccess]);
+  }, [readyState, lastMessage]);
 
   return (
     <GlobalContext.Provider value={{ rootURL }}>
@@ -206,9 +227,8 @@ const App: React.FC = () => {
         {modalState === ModalState.addPlaylist && (
           <NewPlaylistForm
             onSuccess={() =>
-              fetchPlaylists()
-              .then(_ => {
-                setModalState(ModalState.none)
+              fetchPlaylists().then((_) => {
+                setModalState(ModalState.none);
               })
             }
           />
@@ -218,9 +238,9 @@ const App: React.FC = () => {
             id={selectedPlaylistEdit?.id}
             initialName={selectedPlaylistEdit?.name}
             onSuccess={() =>
-              fetchPlaylists().then(_ => {
-                setModalState(ModalState.none)
-              }) 
+              fetchPlaylists().then((_) => {
+                setModalState(ModalState.none);
+              })
             }
           />
         )}
@@ -275,22 +295,38 @@ const App: React.FC = () => {
                   });
                   break;
               }
-              setVideos(vids)
+              setVideos(vids);
               setLastVideoUpdate(Date.now());
             }}
           />
         )}
         {modalState == ModalState.config && (
-          <ConfigForm
-            onSuccess={() => {
-              setIsConfigMissing(false);
-              setModalState(ModalState.none);
-              fetchPlaylists().then((data: Playlist[]) => {
-                setVideos([])
-                setSelectedPlaylist(data[0])
-              });
-            }}
-          />
+          <div className="flex flex-col gap-1">
+            <ConfigForm
+              onSuccess={() => {
+                setIsConfigMissing(false);
+                setModalState(ModalState.none);
+                fetchPlaylists().then((data: Playlist[]) => {
+                  setVideos([]);
+                  setSelectedPlaylist(data[0]);
+                });
+              }}
+            />
+
+            <Label htmlFor="dark-mode-button"> Dark/Light </Label>
+            <Button
+              type="button"
+              color="neutral"
+              data-testid="light-dark-toggle"
+              onClick={toggleDarkMode}
+            >
+              {darkMode ? (
+                <HiOutlineSun className="text-xl" />
+              ) : (
+                <HiOutlineMoon className="text-xl" />
+              )}
+            </Button>
+          </div>
         )}
         {modalState === ModalState.ytdlpNotFound && (
           <div>
@@ -307,8 +343,17 @@ const App: React.FC = () => {
       </Modal>
 
       <div className="min-h-screen h-fit dark:bg-neutral-900 dark:text-neutral-100">
+        {isDownloadStatusMenuOpen && (
+          <DownloadStatus
+            isDark={darkMode}
+            downloadStatuses={downloadStatuses}
+          />
+        )}
         <div className={playingVideo ? "dark" : ""}>
           <Navbar
+            currentDownloadCount={downloadStatuses.filter(ds=>!ds.is_complete && !ds.is_cancelled && !ds.is_error).length}
+            isDownloadStatusMenuOpen={isDownloadStatusMenuOpen}
+            toggleDownloadStatus={() => setIsDownloadStatusMenuOpen((v) => !v)}
             toggleTheme={toggleDarkMode}
             isDarkMode={darkMode}
             openAddVideoMenu={onClickAddVideo}
@@ -322,14 +367,13 @@ const App: React.FC = () => {
             playlists={playlists}
             selectedPlaylist={selectedPlaylist}
             setSelectedPlaylist={(p: Playlist) => {
-              setVideos([])
+              setVideos([]);
               setSelectedPlaylist(p);
             }}
           />
         )}
         <main className={"pt-14" + (playingVideo ? "" : " pl-60")}>
-          {
-            selectedPlaylist && 
+          {selectedPlaylist && (
             <VideoGrid
               setVideos={setVideos}
               playingVideo={playingVideo}
@@ -341,7 +385,7 @@ const App: React.FC = () => {
               onClickEditVideo={(v: Video) => onClickEditVideo(v)}
               onTogglePlayingVideo={(v: Video | null) => setPlayingVideo(v)}
             />
-          }
+          )}
         </main>
       </div>
     </GlobalContext.Provider>

@@ -14,7 +14,7 @@ interface InputProps {
 }
 
 const Input: React.FC<InputProps> = ({ label, autoFocus, onFocus, onBlur, type, id, value, onChange, transparent=false, ...props }) => {
-  const bg = transparent ? "bg-transparent" : "dark:bg-neutral-900"
+  const bg = transparent ? "bg-transparent" : "dark:bg-neutral-800"
   return (
     <div className="relative">
     <input
@@ -26,7 +26,7 @@ const Input: React.FC<InputProps> = ({ label, autoFocus, onFocus, onBlur, type, 
       onFocus={onFocus}
       onBlur={onBlur}
       onChange={onChange}
-      className={"text-black border border-neutral-200 dark:border-neutral-700 dark:text-neutral-200  py-2 px-2 w-full leading-tight focus:outline-none focus:shadow-outline rounded " + bg}
+      className={"text-black border focus:border-blue-500 dark:focus:border-blue-500 border-neutral-200 dark:border-neutral-700 dark:text-neutral-200  py-2 px-2 w-full leading-tight focus:outline-none focus:shadow-outline rounded " + bg}
       {...props}
     />
     {type === "search" && <div className="absolute right-3 top-[12px]">

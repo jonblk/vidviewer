@@ -14,6 +14,13 @@ function isValidUrl(url: string): boolean {
   }
 }
 
+function truncateString(str: string, maxLength: number) { 
+   if (str.length > maxLength) { 
+       return str.substring(0, maxLength - 3) + '...'; 
+   } 
+   return str; 
+} 
 
 
-export {formatSeconds, isValidUrl};
+
+export {formatSeconds, isValidUrl, truncateString};
