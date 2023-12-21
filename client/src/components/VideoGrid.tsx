@@ -43,8 +43,10 @@ const VideoGrid: React.FC<VideoGridProps> = ({VideoPlayer, onTogglePlayingVideo,
 
   const { data, loading, error } = useFetch<Video[]>(
     `${rootURL}/playlist/${playlist.id}/videos?page=${page}&limit=${LIMIT}&search=${search}&sortBy=${sortBy}`,
+    'GET',
+    true,
      // avoid fetching videos on initial render 
-     // if returning back to the grid from playing video:
+     // IF returning to the grid from playing video:
      initialRenderRef.current && videos.length > 0 
   );
 

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {   FiMoreHorizontal  } from 'react-icons/fi';
 import {   HiRefresh } from 'react-icons/hi';
 import { IoIosAdd, } from 'react-icons/io';
+import { useKeyDownListener } from '../hooks/useKeyDownListener';
 
 interface NavbarProps {
   currentDownloadCount: number;
@@ -14,6 +15,8 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({currentDownloadCount, isDownloadStatusMenuOpen, toggleDownloadStatus, openAddVideoMenu, openConfigMenu }) => {
+  useKeyDownListener(isDownloadStatusMenuOpen, "Escape", toggleDownloadStatus)
+
   return (
     <nav
       className={

@@ -1,9 +1,9 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { truncateString } from '../util';
 import GlobalContext from '../contexts/GlobalContext';
-import {  IoMdClose } from 'react-icons/io';
 import { FaCheckCircle,  FaTimesCircle } from 'react-icons/fa';
 import Spinner from './Spinner';
+import useFetch from '../hooks/useFetch';
 
 export interface iDownloadStatus {
   video_id: number;
@@ -22,74 +22,58 @@ interface DownloadStatusProps {
   downloadStatuses: iDownloadStatus[];
 }
 
-async function onClickCancel(id: number, root_url: string | undefined) {
-  const url = `${root_url}/downloads/${id}`;
-  try {
-      const response = await fetch(url, { method: 'DELETE' });
-      if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      console.log('Download cancellation successful');
-  } catch (error) {
-      console.log('An error occurred while cancelling the download:', error);
-  }
-}
-
-async function resumeDownload(videoID: number, rootPath: string | undefined) {
-  try {
-    const response = await fetch(`${rootPath}/downloads/${videoID}`, {method: "PATCH"})
-    if (!response.ok) {
-      throw response 
-    }
-  } catch(e: any) {
-      const r = e as Response
-      if (r.body) {
-          const body = await r.json(); // parse the body as JSON
-          console.error(`Error resuming video: ${body}`) // use the parsed body in the error message
-      } else {
-          console.error(`Error resuming video: ${r.status} ${r.statusText}`)
-      }
-  } 
-}
-
 const DownloadStatus: React.FC<DownloadStatusProps> = ({ downloadStatuses, isDark }) => {
   const rootURL = useContext(GlobalContext)?.rootURL;
-  const [hovered, setHovered] = useState(-1);
-  console.log(downloadStatuses)
+  const { fetch: fetchResume } = useFetch('', 'PATCH',  false);
+  const { fetch: fetchCancel } = useFetch('', 'DELETE', false);
+
+  const onClickCancel = (videoID: number) => {
+    fetchCancel(`${rootURL}/downloads/${videoID}`)
+  }
+
+  const onClickResume = (videoID: number) => {
+    fetchResume(`${rootURL}/downloads/${videoID}`)
+  }
+
   return (
-    <div className={`h-50 w-[340px] fixed top-10 right-4 z-20 m-4 ${isDark ? "bg-neutral-800 " : "bg-neutral-100"} shadow-lg rounded`}>
+    <div className={`h-50 w-[380px] fixed top-10 right-4 z-20 m-4 ${isDark ? "bg-neutral-700 " : "bg-neutral-100"} shadow-lg rounded`}>
     {downloadStatuses.length === 0 && <p className="text-center">No recent downloads</p>}
     {downloadStatuses.map((d, index) => (
-      <div onMouseLeave={ () => setHovered(-1) } onMouseOver={() => setHovered(index)} key={index} className={`${index === 0 && "rounded-t"} ${index === downloadStatuses.length-1 && "rounded-b"} ${ isDark ? "hover:bg-neutral-700" : "hover:bg-neutral-200"} p-3 px-4 flex items-center} ${d.is_cancelled && "opacity-50"} ${d.is_error && "opacity-40"} ${d.is_complete && "opacity-60"}`}>
-        <p className="flex-1 text-md "> { truncateString(d.title, hovered === index ? 28 : 18) } </p>
+      <div key={index} className={`${index === 0 && "rounded-t"} ${index === downloadStatuses.length-1 && "rounded-b"}  p-2 px-3 flex items-center} ${d.is_cancelled && "opacity-50"} ${d.is_error && "opacity-40"} ${d.is_complete && "opacity-60"}`}>
+        <div className="flex flex-1 flex-col">
         { 
-          hovered !== index && d.progress < 98 && !d.is_complete && !d.is_paused && !d.is_cancelled && !d.is_error &&
-          <div className="flex gap-1 ">
-            <p> {d.progress}% </p><p className="opacity-25"> | </p> <p> {d.speed} </p>
+           true &&
+          <div className="flex gap-1 text-sm">
+            {
+            !d.is_paused && <> <p> {d.is_complete ? 100 : d.progress}% </p><p className="opacity-25"> | </p> <p> {d.speed} </p></>
+            }
           </div>
         }
+        <p className="flex-1 text-md"> { truncateString(d.title, d.is_paused ? 28 : 31) } </p>
+        </div>
+        
         {
-          <div className="flex">
+          <div className="flex items-center">
             {/* TODO - clean up state logic */ }
-            { hovered === index && d.progress < 98 && !d.is_complete && !d.is_cancelled && !d.is_paused && 
+            {  d.progress < 98 && !d.is_complete && !d.is_cancelled && !d.is_paused && 
               <button
-                className={`text-sm  flex h-full items-center ${"h-full rounded px-1 bg-red-400 text-black"}`}
-                onClick={() => onClickCancel(d.video_id, rootURL)}
+                className={`text-sm  flex h-6 items-center ${"rounded px-1 bg-red-500 text-white"}`}
+                onClick={() => onClickCancel(d.video_id)}
               >
-                <IoMdClose className="text-red-500 font-bold" /> Cancel
+                Cancel
               </button>
             }
             { d.is_paused && !d.is_cancelled && !d.is_error && !d.is_complete &&
-            <div className="flex gap-1 ">
+            <div className="flex gap-1 items-center">
               <button
-                className={`text-sm  flex h-full items-center ${"h-full rounded px-1 bg-blue-600 text-white"}`}
-                onClick={() => resumeDownload(d.video_id, rootURL)}
+                className={`text-sm  flex h-6 items-center ${"rounded px-1 bg-blue-600 text-white"}`}
+                onClick={() => onClickResume(d.video_id)}
               >
                 Resume
               </button>
               <button
-                className={`text-sm  flex h-full items-center ${"h-full rounded px-1 bg-red-500 text-white"}`}
-                onClick={() => onClickCancel(d.video_id, rootURL)}
+                className={`text-sm  flex h-6 items-center ${"rounded px-1 bg-red-500 text-white"}`}
+                onClick={() => onClickCancel(d.video_id)}
               >
                 Cancel
               </button>
