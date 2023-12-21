@@ -4,7 +4,7 @@
 
 <p align="center"> Vidviewer is a locally run video streaming server (and web client) that integrates with yt-dlp. //in development// </p>
 
-![screenshot](https://github.com/jonblk/vidviewer/assets/132053602/be7ed870-3b2d-4431-9bb4-aea0ac344a19)
+![banner](https://github.com/jonblk/vidviewer/assets/132053602/128f7293-5931-4dbf-8805-c118a415f7fc)
 
 ## Features
 
